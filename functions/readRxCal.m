@@ -4,7 +4,7 @@
 % Calculate Rx calibration matrix from USB or LSB tone
 %   test correction with ideal upconversion
 
-clear; close all; clc;
+close all; clc;
 try
     addpath('functions\');
 catch
