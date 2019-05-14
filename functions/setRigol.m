@@ -1,4 +1,4 @@
-function [] = setRigol(mode,Fsym,Nsyms,instrumentType, intrumentAddress)
+function [] = setRigol(mode,Fsym,Nsyms,instrumentType,intrumentAddress)
 %% readRigol.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
@@ -97,6 +97,30 @@ if mode == 1
     fprintf(visaObj,[':TIMebase:OFFSet ',num2str(T)]);
 end
 
+%% TX Cal Mode
+if mode == 2
+    % Set Time mode
+    fprintf(visaObj,':TIMebase:MODE MAIN');
+    fprintf(visaObj,':RUN');
+    % Trigger off Channel 1
+    fprintf(visaObj,':TRIGger:EDGe:SOURce CHANnel1');
+    % Turn on 20M BW filter
+    fprintf(visaObj,':CHANnel1:BWLimit 20M');
+    % Set Vertical Scale 0.5 V/div
+    fprintf(visaObj,':CHANnel1:SCALe 0.5');
+    % Turn on only Ch1
+    fprintf(visaObj,':CHANnel1:DISP 1');
+    fprintf(visaObj,':CHANnel2:DISP 0');
+    fprintf(visaObj,':CHANnel3:DISP 0');
+    % Set Memory
+    fprintf(visaObj,':ACQuire:MDEPth 1400000');
+    % Calculate Time Scale Values
+    ts = 1000/Fsym;
+    toff = ts*5;
+    % Set Time Scale
+    fprintf(visaObj,[':TIMebase:SCALe ',num2str(ts)]);
+    fprintf(visaObj,[':TIMebase:OFFSet ',num2str(toff)]);
+end
 
 %% RX Cal Mode
 if mode == 3
