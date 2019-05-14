@@ -11,26 +11,16 @@ disp('a perfect, single sideband will be seen in the RF spectrum');
 fprintf('\n');
 
 %%
-questdlg({'Insert AWG USB...'}, ...
-    'Insert Storage Device', ...
-    'Ok','Ok');
-dirpath = uigetdir('ARB Files','Select Save Location for Rx Cal ARB Files');
-if ~dirpath
-    dirpath = pwd;
-end
-%%
 % Sideband
 answer = questdlg('Which RF Sideband? ', ...
     'RF Tone Build', ...
-    'LSB','USB','Both','Both');
+    'LSB','USB','USB');
 % Handle response
 switch answer
     case 'LSB'
         LSB = 1;
     case 'USB'
         LSB = 0;
-    case 'Both'
-        LSB = 2;
 end
 
 % Baseband Freq
@@ -58,76 +48,50 @@ if LSB == 1
     disp('Building Lower Sideband Files...');
     Itx = cos(2*pi*fb*t);
     Qtx = sin(2*pi*fb*t);
-    fnameI = [dirpath,'\LSB_I_cald'];
-    fnameQ = [dirpath,'\LSB_Q_cald'];
-    
-    % Apply Correction
-    load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
-    txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
-    Itxp = txCor(1,:)';
-    Qtxp = txCor(2,:)';
-    
-    % Build AWG Files
-    writeArbFile(fnameI,Itxp,Fsamp);
-    writeArbFile(fnameQ,Qtxp,Fsamp);
-    disp('LSB Rx Calibration ARB build complete...');
-    t = length(Itxp)/Fsamp;
-    fprintf('Frame Length: %.3f seconds\n',t)
-    
-    
-elseif LSB == 0
-    disp('Building Upper Sideband Files...');
-    Qtx = cos(2*pi*fb*t);
-    Itx = sin(2*pi*fb*t);
-    fnameI = [dirpath,'\USB_I_cald'];
-    fnameQ = [dirpath,'\USB_Q_cald'];
-    
-    % Apply Correction
-    load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
-    txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
-    Itxp = txCor(1,:)';
-    Qtxp = txCor(2,:)';
-    % Build AWG Files
-    writeArbFile(fnameI,Itxp,Fsamp);
-    writeArbFile(fnameQ,Qtxp,Fsamp);
-    disp('USB Rx Calibration ARB build complete...');
-    t = length(Itxp)/Fsamp;
-    fprintf('Frame Length: %.3f seconds\n',t)
 else
-    disp('Building Lower Sideband Files...');
-    Itx = cos(2*pi*fb*t);
-    Qtx = sin(2*pi*fb*t);
-    fnameI = [dirpath,'\LSB_I_cald'];
-    fnameQ = [dirpath,'\LSB_Q_cald'];
-    
-    % Apply Correction
-    load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
-    txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
-    Itxp = txCor(1,:)';
-    Qtxp = txCor(2,:)';
-    
-    % Build AWG Files
-    writeArbFile(fnameI,Itxp,Fsamp);
-    writeArbFile(fnameQ,Qtxp,Fsamp);
-    disp('LSB Rx Calibration ARB build complete...');
-    
     disp('Building Upper Sideband Files...');
     Qtx = cos(2*pi*fb*t);
     Itx = sin(2*pi*fb*t);
-    fnameI = [dirpath,'\USB_I_cald'];
-    fnameQ = [dirpath,'\USB_Q_cald'];
-    
-    % Apply Correction
-    load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
-    txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
-    Itxp = txCor(1,:)';
-    Qtxp = txCor(2,:)';
-    % Build AWG Files
-    writeArbFile(fnameI,Itxp,Fsamp);
-    writeArbFile(fnameQ,Qtxp,Fsamp);
-    disp('USB Rx Calibration ARB build complete...');
-    t = length(Itxp)/Fsamp;
-    fprintf('Frame Length: %.3f seconds\n',t)
+end
+
+%% Apply Correction
+load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
+txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
+Itxp = txCor(1,:)';
+Qtxp = txCor(2,:)';
+
+%% Try to Write Files To ARB
+Vpp = 1;    % ARB Output Peak-Peak Voltage
+try
+    WRITE_TO_DISK = 0;
+    arbTo33500_2channel(Itxp,Vpp,'Itx',Qtxp,Vpp,'Qtx',Fsamp);
+catch
+    warning('Failed sending signals to the AWG...');
+    WRITE_TO_DISK = 1;
 end
 
 
+%% Write to Thumbdrive
+if WRITE_TO_DISK
+    questdlg({'Insert AWG Thumbdrive...'}, ...
+        'Insert Storage Device', ...
+        'Ok','Ok');
+    dirpath = uigetdir('ARB Files','Select Save Location for Rx Cal ARB Files');
+    if ~dirpath
+        dirpath = pwd;
+    end
+    if LSB
+        fnameI = [dirpath,'\LSB_I_cald'];
+        fnameQ = [dirpath,'\LSB_Q_cald'];
+    else
+        fnameI = [dirpath,'\USB_I_cald'];
+        fnameQ = [dirpath,'\USB_Q_cald'];
+    end
+    
+    % Build AWG Files
+    writeArbFile(fnameI,Itxp,Fsamp);
+    writeArbFile(fnameQ,Qtxp,Fsamp);
+    disp('Rx Calibration ARB build complete...');
+    t = length(Itxp)/Fsamp;
+    fprintf('Frame Length: %.3f seconds\n',t)
+end
