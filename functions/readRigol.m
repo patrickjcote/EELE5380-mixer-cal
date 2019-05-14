@@ -1,19 +1,58 @@
-function [ V, t ] = readRigol( channel, reTrig, machID )
+function [ V, t ] = readRigol( channel, reTrig, instrumentType, intrumentAddress )
+%% readRigol.m
+% 2019 - Patrick Cote
+% EELE 5380 - Adv. Signals and Systems
+
+% Function to read the Rigol Oscilloscope
+
+% INPUTS:
+%       channel             DSO channel to be read
+%       reTrig              Single shot the DSO if true, otherwise just
+%                           read what ever is currently displayed
+%       instrumentType      VISA Instrument Type
+%                           1       - NI
+%                           2       - Agilent
+%                           'xxxx'  - User Specified
+%                           Default - KEYSIGHT
+%       intrumentAddress    VISA Instrument Address, default Rigol DS4400
+%
+% OUTPUTS:
+%       V           Read signal
+%       t           Time vector for read signal
+
+%% Parameters
+READ_TIMEOUT_PERIOD = 20;       % Timeout period for Trigger Read [seconds]
+
+%% Input Check
+if ~exist('instrumentType','var') 
+    % Default instrument type is KEYSIGHT
+    instrumentType = 'KEYSIGHT';
+end
+if ~exist('intrumentAddress','var') 
+    % Default addresss
+    intrumentAddress = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
+end
+
+%% Set Instrument type if variable is numeric
+if isnumeric(instrumentType)
+    switch instrumentType
+        case 1
+            instrumentType = 'NI';
+        case 2
+            instrumentType = 'Agilent';
+        otherwise
+            instrumentType = 'KEYSIGHT';
+    end
+end
 
 %% Interface configuration and instrument connection
 % Find a VISA-USB object.
-visaObj = instrfind('Type', 'visa-usb', 'RsrcName', 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR', 'Tag', '');
-
-if machID
-    instrumentType = 'ni';
-else
-    instrumentType = 'agilent';
-end
+visaObj = instrfind('Type', 'visa-usb', 'RsrcName', intrumentAddress, 'Tag', '');
 
 % Create the VISA-USB object if it does not exist
 % otherwise use the object that was found.
 if isempty(visaObj)
-    visaObj = visa(instrumentType, 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR');
+    visaObj = visa(instrumentType, intrumentAddress);
 else
     fclose(visaObj);
     visaObj = visaObj(1);
@@ -28,20 +67,34 @@ visaObj.ByteOrder = 'littleEndian';
 % Open the connection
 fopen(visaObj);
 
-% Single shot 
+% If reTrig flag is set do a Single shot 
 if reTrig
+    % Make sure the DSO is in run Mode
     fprintf(visaObj,':RUN');
-    % Set MemDepth to 1.4M
-    
+    % Initiate the Single Shot
     fprintf(visaObj,':SINGle');
+    % Display update to MATLAB console
     disp('Triggering DSO...');
+    % Delay for 2 Seconds to allow for triggering of DSO
     pause(2)
+    % Read the status of the DSO
     status = query(visaObj, ':TRIGger:STATus?', '%s\n' ,'%s');
+    % Intialize Timeout counter
+    tic
+    % While the DSO is not stopped
     while ~strcmp('STOP',status)
+        % Delay for 1 Second
         pause(1);
+        % Re-read the status of the DSO
         status = query(visaObj, ':TRIGger:STATus?', '%s\n' ,'%s');
+        
+        % If timeout period is reached, exit with error message
+        if toc>READ_TIMEOUT_PERIOD
+            error('Trigger timeout. Verify Input Signal');
+        end
     end
 else
+    % If reTrig flag is not set, make sure DSO is STOPPED 
     fprintf(visaObj,':STOP');
 end
 
@@ -69,12 +122,6 @@ fprintf(visaObj,':WAV:DATA?');
 % the waveform structure. FREAD removes the extra terminator in the buffer
 waveform.RawData = binblockread(visaObj,'uint16'); fread(visaObj,1);
 
-% Read back the error queue on the instrument
-% instrumentError = query(visaObj,':SYSTEM:ERR?');
-% if ~isequal(instrumentError,['+0,"No error"' char(10)])
-%     disp(['Instrument Error: ' instrumentError]);
-%     instrumentError = query(visaObj,':SYSTEM:ERR?');
-% end
 % Close the VISA connection.
 fclose(visaObj);
 
@@ -108,6 +155,7 @@ waveform.Delay = ((waveform.Points/2 - waveform.XReference) * waveform.XIncremen
 waveform.XData = (waveform.XIncrement.*(1:length(waveform.RawData))) - waveform.XIncrement;
 waveform.YData = (waveform.YIncrement.*(waveform.RawData - waveform.YReference)) + waveform.YOrigin;
 
+% Save Output Variables
 t = waveform.XData;
 V = waveform.YData;
 
