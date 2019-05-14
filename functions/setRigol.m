@@ -43,6 +43,7 @@ if isnumeric(instrumentType)
     end
 end
 
+
 %% Interface configuration and instrument connection
 % Find a VISA-USB object.
 visaObj = instrfind('Type', 'visa-usb', 'RsrcName', intrumentAddress, 'Tag', '');
@@ -63,9 +64,14 @@ visaObj.InputBufferSize = 2000000;
 visaObj.Timeout = 10;
 % Set the Byte order
 visaObj.ByteOrder = 'littleEndian';
-% Open the connection
-fopen(visaObj);
 
+
+% Open the connection
+try
+    fopen(visaObj);
+catch
+    error('Could not access DSO. Check VISA Type and VISA Address are correct using the Instrument Control Toolbox.');
+end
 %% M-QAM Read Mode
 if mode == 1
     %Set Time mode
