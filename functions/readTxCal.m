@@ -4,29 +4,35 @@
 % Step 1 in the TIMS Tx calibration
 close all;  clc;
 
-RUN_TX_CAL = 1;
-
 %% Cal Parameters
+% Frequency Parameters
 fb = 5e3;           % Baseband Signal frequency         [Symbols/s]
 fLO = 100e3;        % Ideal Local Oscillator Freq       [Hz]
 
+% Calibration Sequence Generator Parameters
 N = 10;             % Number of shift registers for m seq generation
 Itaps = [10 9 5 2]; % Feedback Taps for I seq
 Qtaps = [10 9 7 6]; % Feedback Taps for Q seq
 
-%% Read Signal
+% SNR Threshold
+SNR_THRESH = 10;    % Minimum SNR to determine quality of calibration
 
+%% Read Signal
+% Check to see if Simulator Mode Flag was set from the GUI app
 if exist('SIM_MODE','var')
     if SIM_MODE
-        disp('simmode');
+        disp('Entering Simulator Mode...');
+        % Disable READ_DSO flag
         READ_DSO = 0;
     else
+        %TODO: Update this to automatically upload the Tx_Cal state to the AWG
         questdlg('Recall state: "STATE_Tx_cal_01.sta" on the AWG',...
     'Analog Filter Cal', ...
             'Ok','Ok');
+        % Enable the Read DSO flag
         READ_DSO = 1;
     end
-    
+% If not, prompt for the Data Source
 else
     answer = questdlg('Data Source: ', ...
         'Data Source', ...
@@ -40,21 +46,40 @@ else
     end
 end
 
+% Init TX_CAL flag and Calibration Loop
+RUN_TX_CAL = 1;
 while RUN_TX_CAL
-    % READ RF SIGNAL USING DSO
-    if READ_DSO
-        setRigol_txCal
-        pause(2)
+    %% Determine Data Source and Load Data
+    if READ_DSO 
+        % If READ_DSO Flag is set
+        % Setup Rigol DSO using TxCal Mode Parameters
+        setRigol(2,fb);
+        % Read in RF Data from DSO
         [ RFrx, trx ] = readRigol(1,1,1);
+        % Save the Uncalibrated Data
         save('functions\uncalibrated_RFrx.mat','RFrx','trx')
     else
+        % Otherwise attempt to load simulator mode data
         if isfile('functions\uncalibrated_RFrx_sim.mat')
             load('functions\uncalibrated_RFrx_sim.mat');
         else
-            [file,path] = uigetfile('*.mat');
-            load([path,file])
+            % If the RFrx_sim.mat is found, prompt the user for a file
+            [file,path] = uigetfile('*.mat','Select an RFrx Data file','uncalibrated_RFrx_sim.mat');
+            
+            % Verify Selection
+            if isequal(file,0)
+               disp('User selected Cancel');
+            else
+               disp(['User selected ', fullfile(path,file)]);
+            end
+            
+            % Load The Data File
+            load([path,file]);
+            
         end
     end
+    
+    %% Calculate Sample Information
     Fsamp = 1/mean(diff(trx));
     Rxsps = round(Fsamp/fb);
     taps = round(Rxsps*0.8);
@@ -141,33 +166,35 @@ while RUN_TX_CAL
     symsRx2 = Irx2 + 1i*Qrx2;
     symsRx2 = symsRx2./mean(abs(symsRx2));
     
+    %% Plot Results
     figure;
     plot(real(symsRx),imag(symsRx),'.',real(symsRx2),imag(symsRx2),'.','MarkerSize',5)
     pbaspect([1 1 1]);
     xlim([-1.5 1.5]);ylim([-1.5 1.5]);
-    %     title('Transmitter Calibration Results');
+    title('Transmitter Calibration Results');
     legend('Rx','Calibrated','Location','Best');
     grid on; grid minor;
     
     
-    %% Results
-    % Print
+    %% Print Results
     fprintf('\n------ Carrier Recovery and Sync ------\n');
     fprintf('Carrier Freq. Offset: %0.2f Hz\n',fOff);
     fprintf('Sample Timing Offset: %d samples\n',sto);
     fprintf('Symbol Index Offset : %d symbols\n',lag);
     
     
-    %% SNR Calc
+    %% SNR Check
+    % Calculate a Noise Signal
     noiseRx = symsRx2 - syncSyms;
+    % Calculate a Signal to Noise Power Ratio
     SNR = 10*log10(mean(abs(syncSyms).^2)/mean(abs(noiseRx).^2));
-    if SNR < 10
+    % If SNR is below Threshold, alert user and prompt a re-cal try
+    if SNR < SNR_THRESH
         beep
-        SNR
         answer = questdlg({['Calculated Signal to Noise Ratio is only:',num2str(SNR),' dB.'],'',...
             'Double check the ARBs have been synchronized','',...
             'Double check CH1 on DSO is reading the RF signal','',...
-            'Re-Run the Tx Calibration '}, ...
+            'Re-Run the Tx Calibration? '}, ...
             'Re-Run Cal', ...
             'Yes','No','No');
         % Handle response
