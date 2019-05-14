@@ -25,10 +25,7 @@ if exist('SIM_MODE','var')
         % Disable READ_DSO flag
         READ_DSO = 0;
     else
-        %TODO: Update this to automatically upload the Tx_Cal state to the AWG
-        questdlg('Recall state: "STATE_Tx_cal_01.sta" on the AWG',...
-    'Analog Filter Cal', ...
-            'Ok','Ok');
+        buildTxCal();
         % Enable the Read DSO flag
         READ_DSO = 1;
     end
@@ -40,6 +37,7 @@ else
     % Handle response
     switch answer
         case 'Read DSO'
+            buildTxCal();
             READ_DSO = 1;
         case 'Load .mat File'
             READ_DSO = 0;
