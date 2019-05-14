@@ -78,10 +78,10 @@ if READ_DSO
     [ Irx, ~ ] = readRigol(1,1,1);
     [ Qrx, tq ] = readRigol(2,0,1);
     % Save
-    save(['functions\rxCal_SB',num2str(LSB),'.mat'],'Irx','Qrx','tq');
+    save(['Data Files\rxCal_SB',num2str(LSB),'.mat'],'Irx','Qrx','tq');
 else
-    if isfile(['functions\rxCal_SB',num2str(LSB),'_sim.mat'])
-        load(['functions\rxCal_SB',num2str(LSB),'_sim.mat']);
+    if isfile(['Data Files\rxCal_SB',num2str(LSB),'_sim.mat'])
+        load(['Data Files\rxCal_SB',num2str(LSB),'_sim.mat']);
     else
         [file,path] = uigetfile('*.mat');
         load([path,file])
@@ -140,8 +140,14 @@ D = 1/cosd(phi);
 
 Ainv = [A B;C D];
 
-save('functions\Parameter Files\rxMixerCoefs.mat','Ainv','Idc','Qdc')
-
+% Check if Cal Coef Files folder exists, otherwise create the dir
+if ~isfolder('Cal Coef Files')
+    mkdir 'Cal Coef Files';
+end
+% Save Coefs in the Cal Coef Files
+save('Cal Coef Files\rxMixerCoefs.mat','Ainv','Idc','Qdc')
+disp('Rx Cal Complete...');
+disp('Calibration coeffiencts saved to "Cal Coef Files\rxMixerCoefs.mat"');
 %% Test Correction Matrix
 % Apply Correction
 disp('---- Test Correction Matrix -----');
@@ -178,7 +184,7 @@ qlo = sin(2*pi*100e3*t);
 RFrx = Irx_raw.*ilo + Qrx_raw.*qlo;
 
 %% Load and Apply Correction
-load('functions\Parameter Files\rxMixerCoefs.mat');
+load('Cal Coef Files\rxMixerCoefs.mat');
 rxCorrected = Ainv*[(Irx_raw-Idc)';(Qrx_raw-Qdc)'];
 Irx = rxCorrected(1,:)';
 Qrx = rxCorrected(2,:)';

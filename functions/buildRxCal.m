@@ -62,7 +62,7 @@ if LSB == 1
     fnameQ = [dirpath,'\LSB_Q_cald'];
     
     % Apply Correction
-    load('functions\Parameter Files\txMixerCoefs.mat');     % Mixer calibration parameters
+    load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
     txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
     Itxp = txCor(1,:)';
     Qtxp = txCor(2,:)';
@@ -83,7 +83,7 @@ elseif LSB == 0
     fnameQ = [dirpath,'\USB_Q_cald'];
     
     % Apply Correction
-    load('functions\Parameter Files\txMixerCoefs.mat');     % Mixer calibration parameters
+    load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
     txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
     Itxp = txCor(1,:)';
     Qtxp = txCor(2,:)';
@@ -101,7 +101,7 @@ else
     fnameQ = [dirpath,'\LSB_Q_cald'];
     
     % Apply Correction
-    load('functions\Parameter Files\txMixerCoefs.mat');     % Mixer calibration parameters
+    load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
     txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
     Itxp = txCor(1,:)';
     Qtxp = txCor(2,:)';
@@ -118,7 +118,7 @@ else
     fnameQ = [dirpath,'\USB_Q_cald'];
     
     % Apply Correction
-    load('functions\Parameter Files\txMixerCoefs.mat');     % Mixer calibration parameters
+    load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
     txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
     Itxp = txCor(1,:)';
     Qtxp = txCor(2,:)';

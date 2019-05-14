@@ -105,7 +105,7 @@ qlo = sin(2*pi*100e3*t);
 RFrx = Irx_raw.*ilo + Qrx_raw.*qlo;
 
 %% Load and Apply Correction
-load('functions\Parameter Files\rxMixerCoefs.mat'); 
+load('Cal Coef Files\rxMixerCoefs.mat'); 
 rxCorrected = Ainv*[(Irx_raw-Idc)';(Qrx_raw-Qdc)'];
 Irx = rxCorrected(1,:)';
 Qrx = rxCorrected(2,:)';

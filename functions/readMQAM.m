@@ -32,7 +32,7 @@ end
 
 %% Rx Calibration Matrix
 if RX_CAL
-    load('functions\Parameter Files\rxMixerCoefs.mat');
+    load('Parameter Files\rxMixerCoefs.mat');
     rxCor = Ainv*[(Irx-Idc)';(Qrx-Qdc)'];
     Irx = rxCor(1,:)'; Qrx = rxCor(2,:)';
 end

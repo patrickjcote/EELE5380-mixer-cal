@@ -57,11 +57,11 @@ while RUN_TX_CAL
         % Read in RF Data from DSO
         [ RFrx, trx ] = readRigol(1,1,1);
         % Save the Uncalibrated Data
-        save('functions\uncalibrated_RFrx.mat','RFrx','trx')
+        save('Data Files\uncalibrated_RFrx.mat','RFrx','trx')
     else
         % Otherwise attempt to load simulator mode data
-        if isfile('functions\uncalibrated_RFrx_sim.mat')
-            load('functions\uncalibrated_RFrx_sim.mat');
+        if isfile('Data Files\uncalibrated_RFrx_sim.mat')
+            load('Data Files\uncalibrated_RFrx_sim.mat');
         else
             % If the RFrx_sim.mat is found, prompt the user for a file
             [file,path] = uigetfile('*.mat','Select an RFrx Data file','uncalibrated_RFrx_sim.mat');
@@ -220,6 +220,11 @@ while RUN_TX_CAL
 end
 
 %% Save Data
-save('functions\Parameter Files\txMixerCoefs.mat','Ainv','Idc','Qdc')
+% Check if Cal Coef Files folder exists, otherwise create the dir
+if ~isfolder('Cal Coef Files')
+    mkdir 'Cal Coef Files';
+end
+% Save Coefs in the Cal Coef Files
+save('Cal Coef Files\txMixerCoefs.mat','Ainv','Idc','Qdc')
 disp('Tx Cal Complete...');
-disp('Calibration coeffiencts saved to "functions\Parameter Files\txMixerCoefs.mat"');
+disp('Calibration coeffiencts saved to "Cal Coef Files\txMixerCoefs.mat"');
