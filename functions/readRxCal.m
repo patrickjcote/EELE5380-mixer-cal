@@ -4,9 +4,11 @@
 % Calculate Rx calibration matrix from USB or LSB tone
 %   test correction with ideal upconversion
 
-close all; clc;
-addpath('functions\');
-
+clear; close all; clc;
+try
+    addpath('functions\');
+catch
+end
 %% Input Parameters
 disp('Reading Rx Calibration...');
 
@@ -56,17 +58,12 @@ else
     % Handle response
     switch answer
         case 'Read DSO'
+            % User Selected Read DSO option
+            % set READ_DSO flag
             READ_DSO = 1;
-            % TODO: Auto load AWG with correct states
-            if LSB
-                questdlg('Recall state: "STATE_LSB_RX_CAL.sta" on the AWG',...
-                    'Rx LSB Cal', ...
-                    'Ok','Ok');
-            else
-                questdlg('Recall state: "STATE_USB_RX_CAL.sta" on the AWG',...
-                    'Rx USB Cal', ...
-                    'Ok','Ok');
-            end
+            % Run the buildRxCal script to build the proper signals and
+            % load them onto the AWG or export the ARB files.
+            buildRxCal(fb,LSB);
         case 'Load .mat File'
             READ_DSO = 0;
     end
