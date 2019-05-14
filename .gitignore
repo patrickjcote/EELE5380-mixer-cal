@@ -5,10 +5,12 @@
 
 #
 # Dirs
- Arb\ Files/
+Arb\ Files/
+zOld/
+#
 #
 # MAT Files
-.mat
+*.mat
 
 
 # Windows default autosave extension
