@@ -1,5 +1,4 @@
 function [] = setRigol(mode,Fsym,Nsyms,instrumentType, intrumentAddress)
-
 %% readRigol.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
@@ -12,8 +11,8 @@ function [] = setRigol(mode,Fsym,Nsyms,instrumentType, intrumentAddress)
 %                           2       - TxCal
 %                           3       - RxCal
 %                           4       - Analog Filters
-%       Fsym                Symbol rate for M-QAM read mode
-%       Nsyms               Number of symbols for Nsyms Mode
+%       Fsym                Symbol rate
+%       Nsyms               Number of symbols for M-QAM Mode
 %       instrumentType      VISA Instrument Type
 %                           1       - NI
 %                           2       - Agilent
@@ -69,7 +68,7 @@ fopen(visaObj);
 
 %% M-QAM Read Mode
 if mode == 1
-    %Set Trigger
+    %Set Time mode
     fprintf(visaObj,':TIMebase:MODE MAIN');
     fprintf(visaObj,':RUN');
     % Trigger off Channel 1
@@ -99,11 +98,38 @@ if mode == 1
 end
 
 
+%% RX Cal Mode
+if mode == 3
+    %Set Time Mode and Run the DSO
+    fprintf(visaObj,':TIMebase:MODE MAIN');
+    fprintf(visaObj,':RUN');
+    % Trigger off Channel 1
+    fprintf(visaObj,':TRIGger:EDGe:SOURce CHANnel1');
+    % Set Memory Depth to 700k Points
+    fprintf(visaObj,':ACQuire:MDEPth 700000');
+    % Turn on BW Filters
+    fprintf(visaObj,':CHANnel1:BWLimit 20M');
+    fprintf(visaObj,':CHANnel2:BWLimit 20M');
+    % Set Vertical Scale to 0.5 V/div
+    fprintf(visaObj,':CHANnel1:SCALe 0.5');
+    fprintf(visaObj,':CHANnel2:SCALe 0.5');
+    % Turn on Ch1,Ch2, Turn off Ch3
+    fprintf(visaObj,':CHANnel1:DISP 1');
+    fprintf(visaObj,':CHANnel2:DISP 1');
+    fprintf(visaObj,':CHANnel3:DISP 0');
+    % Calculate a Time Scale and Time offset based on the Symbol Rate
+    ts = 2/Fsym;
+    toff = ts*5;
+    % Set Time Scale
+    fprintf(visaObj,[':TIMebase:SCALe ',num2str(ts)]);
+    fprintf(visaObj,[':TIMebase:OFFSet ',num2str(toff)]);
+end
 
 %% Analog Filter Mode
 if mode == 4
-    %% Set Trigger
+    %Set Time Mode and Run the DSO
     fprintf(visaObj,':TIMebase:MODE MAIN');
+    fprintf(visaObj,':RUN');
     % Trigger off Channel 3
     fprintf(visaObj,':TRIGger:EDGe:SOURce CHANnel3');
     % Set Bandwidth Filters
@@ -128,10 +154,6 @@ end
 
 %% Delete objects and clear them.
 delete(visaObj); clear visaObj;
-
-
-
-
 
 end
 
