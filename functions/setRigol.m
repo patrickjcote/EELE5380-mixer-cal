@@ -7,10 +7,11 @@ function [] = setRigol(mode,Fsym,Nsyms,instrumentType, intrumentAddress)
 % Function to read the Rigol Oscilloscope
 
 % INPUTS:
-%       mode                
+%       mode
 %                           1       - M-QAM Read
 %                           2       - TxCal
 %                           3       - RxCal
+%                           4       - Analog Filters
 %       Fsym                Symbol rate for M-QAM read mode
 %       Nsyms               Number of symbols for Nsyms Mode
 %       instrumentType      VISA Instrument Type
@@ -22,11 +23,11 @@ function [] = setRigol(mode,Fsym,Nsyms,instrumentType, intrumentAddress)
 
 
 %% Input Check
-if ~exist('instrumentType','var') 
+if ~exist('instrumentType','var')
     % Default instrument type is KEYSIGHT
     instrumentType = 'KEYSIGHT';
 end
-if ~exist('intrumentAddress','var') 
+if ~exist('intrumentAddress','var')
     % Default addresss
     intrumentAddress = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
 end
@@ -87,7 +88,7 @@ if mode == 1
     fprintf(visaObj,':CHANnel3:DISP 0');
     % Set Memory Depth to 700k Points
     fprintf(visaObj,':ACQuire:MDEPth 700000');
-
+    
     % Calculate Total Frame Length in Seconds
     T = Nsyms/Fsym;
     % Calculate a Time Scale Base using a tenth of two frame lengths
@@ -95,6 +96,33 @@ if mode == 1
     fprintf(visaObj,[':TIMebase:SCALe ',num2str(ts)]);
     % Offset the trigger point by the length of the frame
     fprintf(visaObj,[':TIMebase:OFFSet ',num2str(T)]);
+end
+
+
+
+%% Analog Filter Mode
+if mode == 4
+    %% Set Trigger
+    fprintf(visaObj,':TIMebase:MODE MAIN');
+    % Trigger off Channel 3
+    fprintf(visaObj,':TRIGger:EDGe:SOURce CHANnel3');
+    % Set Bandwidth Filters
+    fprintf(visaObj,':CHANnel1:BWLimit 20M');
+    fprintf(visaObj,':CHANnel2:BWLimit 20M');
+    fprintf(visaObj,':CHANnel3:BWLimit 20M');
+    % Adjust Vertical Scales: V/div
+    fprintf(visaObj,':CHANnel1:SCALe 0.5');
+    fprintf(visaObj,':CHANnel2:SCALe 0.5');
+    fprintf(visaObj,':CHANnel3:SCALe 1');
+    % Turn on Ch 1,2,3
+    fprintf(visaObj,':CHANnel1:DISP 1');
+    fprintf(visaObj,':CHANnel2:DISP 1');
+    fprintf(visaObj,':CHANnel3:DISP 1');
+    % Set Time Scales
+    fprintf(visaObj,':TIMebase:OFFSet 0.0001');
+    fprintf(visaObj,':TIMebase:SCALe 0.00002');
+    % Make sure DSO is running
+    fprintf(visaObj,':RUN');
 end
 
 
