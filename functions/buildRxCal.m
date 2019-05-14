@@ -1,50 +1,57 @@
+function [] = buildRxCal(fb,LSB_FLAG)
 %% Build Rx Single Tone LSB/USB
-% Parameters
-spc = 50;           % Samples per cycle
 fprintf('\n\n');
 disp('------ Build Rx Calibration AWG Files --------');
 disp('');
-disp('This script builds baseband sine and cosine waves to be played');
+disp('This function builds baseband sine and cosine waves to be played');
 disp('out of the I and Q channels of the AWG. The signals are predistorted');
 disp('using the Tx calibration matrix such that when upconverted')
 disp('a perfect, single sideband will be seen in the RF spectrum');
 fprintf('\n');
 
 %%
-% Sideband
-answer = questdlg('Which RF Sideband? ', ...
-    'RF Tone Build', ...
-    'LSB','USB','USB');
-% Handle response
-switch answer
-    case 'LSB'
-        LSB = 1;
-    case 'USB'
-        LSB = 0;
+% If the Sideband selector flag LSB is not set, prompt for one
+if ~exist('LSB_FLAG','var')
+    answer = questdlg('Which RF Sideband? ', ...
+        'RF Tone Build', ...
+        'LSB','USB','USB');
+    % Handle response
+    switch answer
+        case 'LSB'
+            LSB_FLAG = 1;
+        case 'USB'
+            LSB_FLAG = 0;
+    end
 end
 
-% Baseband Freq
-prompt = {'Enter Baseband Tone Frequency in Hz:'};
-title = 'Input';
-dims = [1 40];
-definput = {'1000'};
-answer = inputdlg(prompt,title,dims,definput);
-
-if isempty(answer)
-    fb = 1e3;
-else
-    fb = str2num(answer{1});
+% If Baseband Freq variable fb is not set, prompt
+if ~exist('fb','var')
+    prompt = {'Enter Baseband Tone Frequency in Hz:'};
+    title = 'Input';
+    dims = [1 40];
+    definput = {'1000'};
+    answer = inputdlg(prompt,title,dims,definput);
+    
+    if isempty(answer)
+        fb = 1e3;
+    else
+        fb = str2num(answer{1});
+    end
+    
+    if isempty(fb)
+        fb = 1e3;       % Symbol Rate
+    end
+    fprintf('\nBaseband Frequency set to: %d Hz\n\n',fb);
 end
 
-if isempty(fb)
-    fb = 1e3;       % Symbol Rate
-end
-fprintf('\nBaseband Frequency set to: %d Hz\n\n',fb);
-
-% Build I and Q
+%% Build I and Q
+% Parameters
+spc = 50;       % Samples per cycle
 Fsamp = spc*fb; % Wavegen Sample Rate
+% Built time Vector
 t = (0:1/Fsamp:0.5)';
-if LSB == 1
+% Build Signal
+if LSB_FLAG == 1
     disp('Building Lower Sideband Files...');
     Itx = cos(2*pi*fb*t);
     Qtx = sin(2*pi*fb*t);
@@ -54,7 +61,7 @@ else
     Itx = sin(2*pi*fb*t);
 end
 
-%% Apply Correction
+%% Apply Transmitter Correction
 load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
 txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
 Itxp = txCor(1,:)';
@@ -80,7 +87,7 @@ if WRITE_TO_DISK
     if ~dirpath
         dirpath = pwd;
     end
-    if LSB
+    if LSB_FLAG
         fnameI = [dirpath,'\LSB_I_cald'];
         fnameQ = [dirpath,'\LSB_Q_cald'];
     else
@@ -95,3 +102,6 @@ if WRITE_TO_DISK
     t = length(Itxp)/Fsamp;
     fprintf('Frame Length: %.3f seconds\n',t)
 end
+
+end
+
