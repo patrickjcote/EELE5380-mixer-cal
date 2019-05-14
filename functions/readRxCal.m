@@ -5,7 +5,7 @@
 %   test correction with ideal upconversion
 
 close all; clc;
-	addpath('functions\');
+addpath('functions\');
 
 %% Input Parameters
 disp('Reading Rx Calibration...');
@@ -57,6 +57,7 @@ else
     switch answer
         case 'Read DSO'
             READ_DSO = 1;
+            % TODO: Auto load AWG with correct states
             if LSB
                 questdlg('Recall state: "STATE_LSB_RX_CAL.sta" on the AWG',...
                     'Rx LSB Cal', ...
@@ -72,8 +73,8 @@ else
 end
 
 if READ_DSO
-    setRigol_rxCal
-    pause(2)
+    % Setup Rigol DSO using RxCal Mode Parameters
+    setRigol(3,fb);
     [ Irx, ~ ] = readRigol(1,1,1);
     [ Qrx, tq ] = readRigol(2,0,1);
     % Save
