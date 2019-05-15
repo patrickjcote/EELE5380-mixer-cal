@@ -122,6 +122,9 @@ fprintf(arbVisa,'SOURCE1:VOLT:OFFSET 0');           % set offset to 0 V
 % enable Ch 1
 fprintf(arbVisa,'OUTPUT1 ON');
 
+% set filter type
+fprintf(arbVisa,'SOURCE1:FUNCtion:ARB:FILT OFF');	% disable filter
+
 % confirm upload
 fprintf('Arb waveform downloaded to channel 1\n\n') % display confirmation in command window
 
