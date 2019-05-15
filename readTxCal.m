@@ -75,7 +75,7 @@ while RUN_TX_CAL
     if READ_DSO 
         % If READ_DSO Flag is set
         % Setup Rigol DSO using TxCal Mode Parameters
-        setRigol(2,fb);
+        setRigol(2,fb,[],VISAtype,VISAaddr);
         % Read in RF Data from DSO
         [ RFrx, trx ] = readRigol(1,1,VISAtype,VISAaddr);
         % Save the Uncalibrated Data
