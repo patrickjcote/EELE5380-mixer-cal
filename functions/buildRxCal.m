@@ -80,12 +80,16 @@ end
 
 %% Write to Thumbdrive
 if WRITE_TO_DISK
-    questdlg({'Insert AWG Thumbdrive...'}, ...
+    
+        questdlg({'The Arbitrary Waveform Generator was not detected.', ...
+        'so the waveform files (ARBs) are being built locally.',''...
+        'Insert a storage device to save .ARB files','',''}, ...
         'Insert Storage Device', ...
         'Ok','Ok');
+
     dirpath = uigetdir('ARB Files','Select Save Location for Rx Cal ARB Files');
     if ~dirpath
-        dirpath = pwd;
+        error('Build Rx Calibration Files Operation Cancled by User');
     end
     if LSB_FLAG
         fnameI = [dirpath,'\LSB_I_cald'];

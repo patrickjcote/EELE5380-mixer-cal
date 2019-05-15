@@ -4,16 +4,32 @@
 % Calculate Rx calibration matrix from USB or LSB tone
 %   test correction with ideal upconversion
 
-close all; clc;
-
+%% GUI Test
+% If SIM_MODE is not declared this script is not being run from the GUI app
+%   so clear the workspace
 if ~exist('SIM_MODE','var')
-    clear; 
+    clear;
 end
 
+%% Check for VISA Address and Type, if none, set defaults
+if ~exist('VISAaddr','var')
+    disp('Setting default DSO address');
+    VISAaddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
+end
+
+if ~exist('VISAtype','var')
+    disp('Setting default DSO type');
+    VISAtype = 'KEYSIGHT';
+end
+
+
+%% Add Functions Path
 try
     addpath('functions\');
 catch
+    warning('Functions Path Not Found.');
 end
+
 %% Input Parameters
 disp('Reading Rx Calibration...');
 
@@ -33,7 +49,6 @@ if isempty(fb)
 end
 fprintf('\nBaseband Frequency set to: %d Hz\n\n',fb);
 
-
 answer = questdlg('Which RF Sideband? ', ...
     'RF Tone Build', ...
     'LSB','USB','LSB');
@@ -45,7 +60,6 @@ switch answer
         LSB = 0;
 end
 
-
 %% Read DSO and Calc IQ Correction Matrix
 % % Read in data
 if exist('SIM_MODE','var')
@@ -53,6 +67,9 @@ if exist('SIM_MODE','var')
         disp('simmode');
         READ_DSO = 0;
     else
+        % Run the buildRxCal script to build the proper signals and
+        % load them onto the AWG or export the ARB files.
+        buildRxCal(fb,LSB);
         READ_DSO = 1;
     end
     
@@ -63,22 +80,23 @@ else
     % Handle response
     switch answer
         case 'Read DSO'
-            % User Selected Read DSO option
-            % set READ_DSO flag
-            READ_DSO = 1;
             % Run the buildRxCal script to build the proper signals and
             % load them onto the AWG or export the ARB files.
             buildRxCal(fb,LSB);
+            % User Selected Read DSO option
+            % set READ_DSO flag
+            READ_DSO = 1;
         case 'Load .mat File'
             READ_DSO = 0;
     end
 end
 
 if READ_DSO
+    
     % Setup Rigol DSO using RxCal Mode Parameters
     setRigol(3,fb);
-    [ Irx, ~ ] = readRigol(1,1,1);
-    [ Qrx, tq ] = readRigol(2,0,1);
+    [ Irx, ~ ] = readRigol(1,1,VISAtype,VISAaddr);
+    [ Qrx, tq ] = readRigol(2,0,VISAtype,VISAaddr);
     % Save
     save(['Data Files\rxCal_SB',num2str(LSB),'.mat'],'Irx','Qrx','tq');
 else

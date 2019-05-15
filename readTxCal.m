@@ -1,8 +1,31 @@
 % readTxCal.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
-% Step 1 in the TIMS Tx calibration
-close all;  clc;
+
+%% GUI Test
+% If SIM_MODE is not declared this script is not being run from the GUI app
+%   so clear the workspace
+if ~exist('SIM_MODE','var')
+    clear; 
+end
+
+%% Check for VISA Address and Type, if none, set defaults
+if ~exist('VISAaddr','var')
+    disp('Setting default DSO address');
+    VISAaddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR'; 
+end
+
+if ~exist('VISAtype','var')
+    disp('Setting default DSO type');
+    VISAtype = 'KEYSIGHT'; 
+end
+
+%% Add Functions Path
+try
+    addpath('functions\');
+catch
+    warning('Functions Path Not Found.');
+end
 
 %% Cal Parameters
 % Frequency Parameters
@@ -37,6 +60,7 @@ else
     % Handle response
     switch answer
         case 'Read DSO'
+            % Build the ARB Files
             buildTxCal();
             READ_DSO = 1;
         case 'Load .mat File'
@@ -53,7 +77,7 @@ while RUN_TX_CAL
         % Setup Rigol DSO using TxCal Mode Parameters
         setRigol(2,fb);
         % Read in RF Data from DSO
-        [ RFrx, trx ] = readRigol(1,1,1);
+        [ RFrx, trx ] = readRigol(1,1,VISAtype,VISAaddr);
         % Save the Uncalibrated Data
         save('Data Files\uncalibrated_RFrx.mat','RFrx','trx')
     else
