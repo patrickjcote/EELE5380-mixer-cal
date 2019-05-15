@@ -62,7 +62,7 @@ else
 end
 
 %% Apply Transmitter Correction
-load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
+load('Calibration Files\txMixerCoefs.mat');     % Mixer calibration parameters
 txCor = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
 Itxp = txCor(1,:)';
 Qtxp = txCor(2,:)';

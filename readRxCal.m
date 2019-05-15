@@ -160,14 +160,14 @@ D = 1/cosd(phi);
 
 Ainv = [A B;C D];
 
-% Check if Cal Coef Files folder exists, otherwise create the dir
-if ~isfolder('Cal Coef Files')
-    mkdir 'Cal Coef Files';
+% Check if Calibration Files folder exists, otherwise create the dir
+if ~isfolder('Calibration Files')
+    mkdir 'Calibration Files';
 end
-% Save Coefs in the Cal Coef Files
-save('Cal Coef Files\rxMixerCoefs.mat','Ainv','Idc','Qdc')
+% Save Coefs in the Calibration Files
+save('Calibration Files\rxMixerCoefs.mat','Ainv','Idc','Qdc')
 disp('Rx Cal Complete...');
-disp('Calibration coeffiencts saved to "Cal Coef Files\rxMixerCoefs.mat"');
+disp('Calibration coeffiencts saved to "Calibration Files\rxMixerCoefs.mat"');
 %% Test Correction Matrix
 % Apply Correction
 disp('---- Test Correction Matrix -----');
@@ -204,7 +204,7 @@ qlo = sin(2*pi*100e3*t);
 RFrx = Irx_raw.*ilo + Qrx_raw.*qlo;
 
 %% Load and Apply Correction
-load('Cal Coef Files\rxMixerCoefs.mat');
+load('Calibration Files\rxMixerCoefs.mat');
 rxCorrected = Ainv*[(Irx_raw-Idc)';(Qrx_raw-Qdc)'];
 Irx = rxCorrected(1,:)';
 Qrx = rxCorrected(2,:)';

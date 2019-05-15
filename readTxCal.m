@@ -242,11 +242,11 @@ while RUN_TX_CAL
 end
 
 %% Save Data
-% Check if Cal Coef Files folder exists, otherwise create the dir
-if ~isfolder('Cal Coef Files')
-    mkdir 'Cal Coef Files';
+% Check if Calibration Files folder exists, otherwise create the dir
+if ~isfolder('Calibration Files')
+    mkdir 'Calibration Files';
 end
-% Save Coefs in the Cal Coef Files
-save('Cal Coef Files\txMixerCoefs.mat','Ainv','Idc','Qdc')
+% Save Coefs in the Calibration Files
+save('Calibration Files\txMixerCoefs.mat','Ainv','Idc','Qdc')
 disp('Tx Cal Complete...');
-disp('Calibration coeffiencts saved to "Cal Coef Files\txMixerCoefs.mat"');
+disp('Calibration coeffiencts saved to "Calibration Files\txMixerCoefs.mat"');
