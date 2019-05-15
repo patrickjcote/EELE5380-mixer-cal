@@ -161,21 +161,18 @@ if mode == 4
     fprintf(visaObj,':TIMebase:MODE MAIN');
     fprintf(visaObj,':RUN');
     % Trigger off Channel 3
-    fprintf(visaObj,':TRIGger:EDGe:SOURce CHANnel3');
+    fprintf(visaObj,':TRIGger:EDGe:SOURce CHANnel1');
     % Set Bandwidth Filters
     fprintf(visaObj,':CHANnel1:BWLimit 20M');
     fprintf(visaObj,':CHANnel2:BWLimit 20M');
-    fprintf(visaObj,':CHANnel3:BWLimit 20M');
     % Adjust Vertical Scales: V/div
     fprintf(visaObj,':CHANnel1:SCALe 0.5');
     fprintf(visaObj,':CHANnel2:SCALe 0.5');
-    fprintf(visaObj,':CHANnel3:SCALe 1');
     % Turn on Ch 1,2,3
     fprintf(visaObj,':CHANnel1:DISP 1');
     fprintf(visaObj,':CHANnel2:DISP 1');
-    fprintf(visaObj,':CHANnel3:DISP 1');
     % Set Time Scales
-    fprintf(visaObj,':TIMebase:OFFSet 0.0001');
+    fprintf(visaObj,':TIMebase:OFFSet 0');
     fprintf(visaObj,':TIMebase:SCALe 0.00002');
     % Make sure DSO is running
     fprintf(visaObj,':RUN');
