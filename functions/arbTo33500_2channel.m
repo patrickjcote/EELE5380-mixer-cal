@@ -49,7 +49,7 @@ set(arbVisa,'OutputBufferSize',(buffer+125));   % set buffer
 try
     fopen(arbVisa);
 catch exception                                 % problem occurred throw error message
-    uiwait(msgbox('Error occurred trying to connect to the 33522','Error Message','error'));
+    uiwait(msgbox('An error occurred trying to connect to the Waveform Generator','Waveform Generator Error','error'));
     rethrow(exception);
 end
 
