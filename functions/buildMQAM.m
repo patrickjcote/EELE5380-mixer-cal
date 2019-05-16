@@ -30,18 +30,63 @@ else
     fname = 'uncal';
 end
 
-dirpath = uigetdir('ARB Files','Select Save Location for Rx Cal ARB Files');
+%% Try to Write Files To ARB
+Fsamp = sps*Fsym; % Wavegen Sample Rate
+Vpp = 1;    % ARB Output Peak-Peak Voltage
+try
+    WRITE_TO_DISK = 0;
+    arbTo33500_2channel(Itx,Vpp,'Itx',Qtx,Vpp,'Qtx',Fsamp);
+catch
+    warning('Failed sending signals to the AWG...');
+    WRITE_TO_DISK = 1;
+end
+
+
+%% Write to Thumbdrive
+if WRITE_TO_DISK
+    
+        questdlg({'The Arbitrary Waveform Generator was not detected.', ...
+        'so the waveform files (ARBs) are being built locally.',''...
+        'Insert a storage device to save .ARB files','',''}, ...
+        'Insert Storage Device', ...
+        'Ok','Ok');
+
+    dirpath = uigetdir('ARB Files','Select Save Location for ARB Files');
+    if ~dirpath
+        error('Build M-QAM Tx Files Operation Cancled by User');
+    end
+    
+    dirpath = uigetdir('ARB Files','Select Save Location for M-QAM Tx ARB Files');
 if ~dirpath
     dirpath = pwd;
 end
 
 % Build AWG Files
-Fsamp = sps*Fsym; % Wavegen Sample Rate
-writeArbFile([dirpath,'\',num2str(M),'Q_q_',fname],Qtx,Fsamp);
 writeArbFile([dirpath,'\',num2str(M),'Q_i_',fname],Itx,Fsamp);
+writeArbFile([dirpath,'\',num2str(M),'Q_q_',fname],Qtx,Fsamp);
 disp('ARB build complete...');
 t = length(Itx)/Fsamp;
 fprintf('Frame Length: %.3f seconds\n',t)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end
 
