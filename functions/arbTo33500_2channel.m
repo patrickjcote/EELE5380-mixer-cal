@@ -1,4 +1,4 @@
-function arbTo33500_2channel(arb1,amp1,name1,arb2,amp2,name2,sRate)
+function arbTo33500_2channel(arb1,amp1,name1,arb2,amp2,name2,sRate,FILT_OFF)
 % arbTo33500_2channel.m
 % Tyler Holliday
 % Adv. Signals & Systems
@@ -31,7 +31,7 @@ arbVisa = instrfind('Type', 'visa-usb', 'RsrcName', 'USB0::0x0957::0x2C07::MY528
 % Create the VISA-USB object if it does not exist
 % otherwise use the object that was found.
 if isempty(arbVisa)
-    arbVisa = visa('NI', 'USB0::0x0957::0x2C07::MY52801516::0::INSTR');
+    arbVisa = visa('KEYSIGHT', 'USB0::0x0957::0x2C07::MY52801516::0::INSTR');
 else
     fclose(arbVisa);
     arbVisa = arbVisa(1);
@@ -230,13 +230,18 @@ end
 
 
 %% final preparations
+%Default FIlters off
+if ~exist('FILT_OFF','var')
+    FILT_OFF = 1;
+end
 
+if FILT_OFF
 % set filter type
 fprintf(arbVisa,'SOURCE2:FUNCtion:ARB:FILT OFF');	% disable filter
 
 % set filter type
 fprintf(arbVisa,'SOURCE1:FUNCtion:ARB:FILT OFF');	% disable filter
-
+end
 % sync arbs
 fprintf(arbVisa,'FUNC:ARB:SYNC');
 

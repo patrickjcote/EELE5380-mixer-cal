@@ -1,4 +1,4 @@
-function arbTo33500_1channel(arb1,amp1,name1,sRate)
+function arbTo33500_1channel(arb1,amp1,name1,sRate,FILT_OFF)
 % arbTo33500_1channel.m
 % Tyler Holliday
 % Adv. Signals & Systems
@@ -28,7 +28,7 @@ arbVisa = instrfind('Type', 'visa-usb', 'RsrcName', 'USB0::0x0957::0x2C07::MY528
 % Create the VISA-USB object if it does not exist
 % otherwise use the object that was found.
 if isempty(arbVisa)
-    arbVisa = visa('NI', 'USB0::0x0957::0x2C07::MY52801516::0::INSTR');
+    arbVisa = visa('KEYSIGHT', 'USB0::0x0957::0x2C07::MY52801516::0::INSTR');
 else
     fclose(arbVisa);
     arbVisa = arbVisa(1);
@@ -122,8 +122,17 @@ fprintf(arbVisa,'SOURCE1:VOLT:OFFSET 0');           % set offset to 0 V
 % enable Ch 1
 fprintf(arbVisa,'OUTPUT1 ON');
 
+
+%Default FIlters off
+if ~exist('FILT_OFF','var')
+    FILT_OFF = 1;
+end
+
+if FILT_OFF
 % set filter type
 fprintf(arbVisa,'SOURCE1:FUNCtion:ARB:FILT OFF');	% disable filter
+end
+
 
 % confirm upload
 fprintf('Arb waveform downloaded to channel 1\n\n') % display confirmation in command window

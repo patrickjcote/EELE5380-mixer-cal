@@ -29,7 +29,7 @@ Vpp = 1;            % ARB Output Peak-Peak Voltage
 Fsamp = sps*fb;             % AWG sample rate           [Sa/s]
 try
     WRITE_TO_DISK = 0;
-    arbTo33500_2channel(Itx,Vpp,'Itx',Qtx,Vpp,'Qtx',Fsamp);
+    arbTo33500_2channel(Itx,Vpp,'Itx',Qtx,Vpp,'Qtx',Fsamp,1);
 catch
     warning('Failed sending signals to the AWG...');
     WRITE_TO_DISK = 1;
