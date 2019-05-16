@@ -14,7 +14,7 @@ Itx = zeros(N/(duty/100),1);
 Itx(N:N+N-1) = ones(N,1);
 
 %% Try to Write Files To ARB
-Vpp = 1;    % ARB Output Peak-Peak Voltage
+Vpp = 5;    % ARB Output Peak-Peak Voltage
 try
     WRITE_TO_DISK = 0;
     arbTo33500_1channel(Itx,Vpp,'Itx',Fsamp,0);
