@@ -21,7 +21,7 @@ Itx = rectpulse(real(modBlock),sps);
 
 % Apply Transmitter Calibration Correction
 if TX_CAL
-    load('Cal Coef Files\txMixerCoefs.mat');     % Mixer calibration parameters
+    load('Calibration Files\txMixerCoefs.mat');     % Mixer calibration parameters
     txCorrected = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
     Itx = txCorrected(1,:)';
     Qtx = txCorrected(2,:)';

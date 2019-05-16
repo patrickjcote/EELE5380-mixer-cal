@@ -1,4 +1,4 @@
-function [SNR, BER, errs] = readMQAM(M,Fsym,N_syms,rng_seed,RX_CAL)
+function [SNR, BER, errs] = readMQAM(M,Fsym,N_syms,rng_seed,RX_CAL,VISAtype,VISAaddr)
 % read_MQAM.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv Signals
@@ -20,11 +20,25 @@ switch answer
 end
     
 if READ_DSO
-    setRigol(Fsym,N_syms);
-    [ Irx, ~ ] = readRigol(1,1,1);
-    [ Qrx, tq ] = readRigol(2,0,1);
+    
+    %% Check for VISA Address and Type, if none, set defaults
+    if ~exist('VISAaddr','var')
+        disp('Setting default DSO address');
+        VISAaddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
+    end
+
+    if ~exist('VISAtype','var')
+        disp('Setting default DSO type');
+        VISAtype = 'KEYSIGHT';
+    end
+
+    
+    
+    setRigol(1,Fsym,N_syms,VISAtype,VISAaddr);
+    [ Irx, ~ ] = readRigol(1,1,VISAtype,VISAaddr);
+    [ Qrx, tq ] = readRigol(2,0,VISAtype,VISAaddr);
     % Save
-    save(['rxMqam_',num2str(M),'.mat'],'Irx','Qrx','tq');
+    save(['Data Files\rxMqam_',num2str(M),'.mat'],'Irx','Qrx','tq');
 else
     [file,path] = uigetfile('*.mat');
     load([path,file])
@@ -32,7 +46,7 @@ end
 
 %% Rx Calibration Matrix
 if RX_CAL
-    load('Parameter Files\rxMixerCoefs.mat');
+    load('Calibration Files\rxMixerCoefs.mat');
     rxCor = Ainv*[(Irx-Idc)';(Qrx-Qdc)'];
     Irx = rxCor(1,:)'; Qrx = rxCor(2,:)';
 end
