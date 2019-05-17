@@ -88,7 +88,6 @@ fprintf(visaObj,'*RST');
 %% Send waveform(s)
 % For each waveform
 for n = 1:Nx
-    
     % Set channel
     if (Nx==1 && length(Vpp)==2)
         chnl = 'SOURce2';
@@ -117,7 +116,7 @@ for n = 1:Nx
     arbBytes=num2str(length(signal)*4);                   % # of bytes
     
     % generate header
-    header = [chnl,':DATA:ARBitrary ' name1 ', #', num2str(length(arbBytes)), arbBytes];
+    header = [chnl,':DATA:ARBitrary ARB',num2str(chnlNdx),', #', num2str(length(arbBytes)), arbBytes];
     binblockBytes = typecast(signal,'uint8');             % convert datapoints to binary before sending
     fwrite(visaObj,[header binblockBytes],'uint8');     % combine header and datapoints then send to instrument
     fprintf(visaObj,'*WAI');                            % Make sure no other commands are exectued until arb is done downloadin
@@ -126,7 +125,7 @@ for n = 1:Nx
     waitbar(0.8/Nx,h,mes);
     
     % set ARB name
-    command = [chnl,':FUNCtion:ARBitrary ARB', num2str(n)];    % create name command
+    command = [chnl,':FUNCtion:ARBitrary ARB', num2str(chnlNdx)];    % create name command
     fprintf(visaObj,command);                           % set current arb waveform to defined arb testrise
 
     % update waitbar
@@ -140,7 +139,7 @@ for n = 1:Nx
     fprintf(visaObj,[chnl,':FUNCtion ARB']);        % turn on arb function
     
     % set amplitude, Vpp
-    command = [chnl,':VOLT ' num2str(V(n))];      % create amplitude command
+    command = [chnl,':VOLT ' num2str(Vpp(n))];      % create amplitude command
     fprintf(visaObj,command);                       % send amplitude command
     
     % set offset
@@ -162,7 +161,7 @@ for n = 1:Nx
         fprintf (errorcheck)
     end
     
-    switch filtFlag
+    switch filtFlag(n)
         % set filter type
         case 0
             fprintf(visaObj,[chnl,':FUNCtion:ARB:FILT OFF']);	% disable filter
@@ -189,7 +188,7 @@ end
 fprintf(visaObj,'FUNC:ARB:SYNC');
 
 %% Clean Up
-close(h);
-fclose(visaObj);
+close(h);           % close status bar
+fclose(visaObj);    % close visa object
 
 end
