@@ -1,5 +1,5 @@
-function [ V, t ] = readRigol( channel, reTrig, instrumentType, intrumentAddress )
-%% readRigol.m
+function [ V, t ] = readDSO( channel, reTrig, instrumentType, intrumentAddress )
+%% readDSO.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
 

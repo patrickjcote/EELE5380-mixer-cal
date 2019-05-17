@@ -61,8 +61,8 @@ end
 if READ_DSO
     setRigol_rxCal
     pause(2)
-    [ Irx, ~ ] = readRigol(1,1,1);
-    [ Qrx, tq ] = readRigol(2,0,1);
+    [ Irx, ~ ] = readDSO(1,1,1);
+    [ Qrx, tq ] = readDSO(2,0,1);
     % Save
     save(['functions\rxCal_SB',num2str(LSB),'.mat'],'Irx','Qrx','tq');
 else

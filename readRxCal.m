@@ -95,8 +95,8 @@ if READ_DSO
     
     % Setup Rigol DSO using RxCal Mode Parameters
     setRigol(3,fb,[],VISAtype,VISAaddr);
-    [ Irx, ~ ] = readRigol(1,1,VISAtype,VISAaddr);
-    [ Qrx, tq ] = readRigol(2,0,VISAtype,VISAaddr);
+    [ Irx, ~ ] = readDSO(1,1,VISAtype,VISAaddr);
+    [ Qrx, tq ] = readDSO(2,0,VISAtype,VISAaddr);
     % Save
     save(['Data Files\rxCal_SB',num2str(LSB),'.mat'],'Irx','Qrx','tq');
 else
