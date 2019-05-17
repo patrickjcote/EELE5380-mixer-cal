@@ -66,15 +66,15 @@ classdef mixerCalibration < matlab.apps.AppBase
                 for n = 1:length(devices)
                     % Load the Device Name as the Dropdown Text
                     % Load the device structure into the Dropdown data
-                    app.ScopeDropDown.Items{n} = devices{n}.ID;
+                    app.ScopeDropDown.Items{n} = devices{n}.IDN;
                     app.ScopeDropDown.ItemsData{n} = devices{n};
-                    app.AWGDropDown.Items{n} = devices{n}.ID;
+                    app.AWGDropDown.Items{n} = devices{n}.IDN;
                     app.AWGDropDown.ItemsData{n} = devices{n};
                     
                     % Test IDs to Set Defaults (DSO->Rigol, AWG->Agilent);
-                    if strncmpi('Agilent',devices{n}.ID,7)
+                    if strncmpi('Agilent',devices{n}.IDN,7)
                         awgNDX = n;
-                    elseif strncmpi('Rigol',devices{n}.ID,5)
+                    elseif strncmpi('Rigol',devices{n}.IDN,5)
                         dsoNDX = n;
                     end
                 end
