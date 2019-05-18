@@ -11,15 +11,26 @@ if ~exist('SIM_MODE','var')
     clear;
 end
 
-%% Check for VISA Address and Type, if none, set defaults
-if ~exist('VISAaddr','var')
+%% Check for VISA Addresses and Type, if none, set defaults
+
+if ~exist('DSOVisaAddr','var')
     disp('Setting default DSO address');
-    VISAaddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
+    DSOVisaAddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR'; 
 end
 
-if ~exist('VISAtype','var')
+if ~exist('DSOVisaType','var')
     disp('Setting default DSO type');
-    VISAtype = 'KEYSIGHT';
+    DSOVisaType = 'KEYSIGHT'; 
+end
+
+% Default AWG to Keysight 33500 awg
+if ~exist('AWGVisaType','var')
+    % Default instrument type is KEYSIGHT
+    AWGVisaType = 'KEYSIGHT';
+end
+if ~exist('AWGVisaAddr','var')
+    % Default addresss
+    AWGVisaAddr = 'USB0::0x0957::0x2C07::MY52801516::0::INSTR';
 end
 
 
@@ -69,7 +80,7 @@ if exist('SIM_MODE','var')
     else
         % Run the buildRxCal script to build the proper signals and
         % load them onto the AWG or export the ARB files.
-        buildRxCal(fb,LSB,instrumentType,instrumentAddress);
+        buildRxCal(fb,LSB,AWGVisaType,AWGVisaAddr);
         READ_DSO = 1;
     end
     
@@ -82,7 +93,7 @@ else
         case 'Read DSO'
             % Run the buildRxCal script to build the proper signals and
             % load them onto the AWG or export the ARB files.
-            buildRxCal(fb,LSB,instrumentType,instrumentAddress);
+            buildRxCal(fb,LSB,AWGVisaType,AWGVisaAddr);
             % User Selected Read DSO option
             % set READ_DSO flag
             READ_DSO = 1;
@@ -91,12 +102,11 @@ else
     end
 end
 
-if READ_DSO
-    
+if READ_DSO 
     % Setup Rigol DSO using RxCal Mode Parameters
-    setRigol(3,fb,[],VISAtype,VISAaddr);
-    [ Irx, ~ ] = readDSO(1,1,VISAtype,VISAaddr);
-    [ Qrx, tq ] = readDSO(2,0,VISAtype,VISAaddr);
+    setRigol(3,fb,[],DSOVisaType,DSOVisaAddr);
+    [ Irx, ~ ] = readDSO(1,1,DSOVisaType,DSOVisaAddr);
+    [ Qrx, tq ] = readDSO(2,0,DSOVisaType,DSOVisaAddr);
     % Save
     save(['Data Files\rxCal_SB',num2str(LSB),'.mat'],'Irx','Qrx','tq');
 else
