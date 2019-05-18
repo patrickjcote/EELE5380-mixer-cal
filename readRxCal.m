@@ -1,15 +1,5 @@
-% readRxCal.m
-% 2019 - Patrick Cote
-% EELE 5380 - Adv Signals
-% Calculate Rx calibration matrix from USB or LSB tone
-%   test correction with ideal upconversion
-
-%% GUI Test
-% If SIM_MODE is not declared this script is not being run from the GUI app
-%   so clear the workspace
-if ~exist('SIM_MODE','var')
-    clear;
-end
+function readRxCal(DSOVisaType,DSOVisaAddr,AWGVisaType,AWGVisaAddr)
+%% readRxCal.m
 
 %% Check for VISA Addresses and Type, if none, set defaults
 
@@ -231,3 +221,6 @@ fftPlot(RFcomp,fs,[90e3 110e3]);
 clear title
 title('Calibrated');
 ylim([-85 0]);
+
+end
+
