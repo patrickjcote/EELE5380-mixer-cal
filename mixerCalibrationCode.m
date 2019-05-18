@@ -2,7 +2,7 @@ classdef mixerCalibration < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
-        EMONATIMSMixerCalibrationv03UIFigure  matlab.ui.Figure
+        EMONATIMSMixerCalibrationv05UIFigure  matlab.ui.Figure
         TabGroup                      matlab.ui.container.TabGroup
         MixerCalibrationTab           matlab.ui.container.Tab
         RunTxCalibrationButton        matlab.ui.control.StateButton
@@ -10,7 +10,6 @@ classdef mixerCalibration < matlab.apps.AppBase
         RunRxCalibrationButton        matlab.ui.control.StateButton
         Status                        matlab.ui.control.Label
         DeviceSettingsTab             matlab.ui.container.Tab
-        EnableSimulatorModeCheckBox   matlab.ui.control.CheckBox
         ScopeDropDownLabel            matlab.ui.control.Label
         ScopeDropDown                 matlab.ui.control.DropDown
         AWGLabel                      matlab.ui.control.Label
@@ -22,6 +21,7 @@ classdef mixerCalibration < matlab.apps.AppBase
         VISADeviceAddressEditField    matlab.ui.control.EditField
         VISADriverTypeEditFieldLabel  matlab.ui.control.Label
         VISADriverTypeEditField       matlab.ui.control.EditField
+        EnableSimulatorModeCheckBox   matlab.ui.control.CheckBox
     end
 
     
@@ -41,8 +41,8 @@ classdef mixerCalibration < matlab.apps.AppBase
             drawnow
             
             % Find Devices          
-            devices = scanVISA();
-%                             load('scanVisaOutput.mat','devices');
+%             devices = scanVISA();
+                            load('scanVisaOutput3.mat','devices');
             
             if ~iscell(devices)
                 % Devices structure is empty, load Items
@@ -52,6 +52,12 @@ classdef mixerCalibration < matlab.apps.AppBase
                 app.TabGroup.SelectedTab = app.DeviceSettingsTab;
                 % Set status lamp color
                 app.RefreshLamp.Color = 'Red';
+                % Disable Calibration Function Buttons
+                app.RunRxCalibrationButton.Enable = 0;
+                app.RunTxCalibrationButton.Enable = 0;
+                app.AnalogRxFilterTuningButton.Enable = 0;
+                app.Status.Text = 'No Devices Available.';
+                app.Status.FontColor = [0.64 0.08 0.18];
                 % Sound
                 beep
                 % Return 0
@@ -86,6 +92,12 @@ classdef mixerCalibration < matlab.apps.AppBase
                     app.AWGDropDown.Value = devices{awgNDX};
                 end
                 
+                % Enable Calibration Function Buttons
+                app.RunRxCalibrationButton.Enable = 1;
+                app.RunTxCalibrationButton.Enable = 1;
+                app.AnalogRxFilterTuningButton.Enable = 1;
+                app.Status.Text = '';
+                
                 % Device refresh successful, set lamp to green
                 app.RefreshLamp.Color = 'Green';
             end
@@ -113,12 +125,12 @@ classdef mixerCalibration < matlab.apps.AppBase
 
         % Value changed function: RunTxCalibrationButton
         function RunTxCalibrationButtonValueChanged(app, event)
-                        
-            DSOVisa = app.ScopeDropDown.ItemsData;
+
+            DSOVisa = app.ScopeDropDown.Value;
             DSOVisaType = DSOVisa.type;
             DSOVisaAddr = DSOVisa.addr;
             
-            AWGVisa = app.AWGDropDown.ItemsData;
+            AWGVisa = app.AWGDropDown.Value;
             AWGVisaType = AWGVisa.type;
             AWGVisaAddr = AWGVisa.addr;
             
@@ -136,17 +148,21 @@ classdef mixerCalibration < matlab.apps.AppBase
             end
             app.RunTxCalibrationButton.Value = 0;
             % Disable/Enable visablity to bring app window back to the foreground
-            app.EMONATIMSMixerCalibrationv03UIFigure.Visible = 0;
-            app.EMONATIMSMixerCalibrationv03UIFigure.Visible = 1;
+            app.EMONATIMSMixerCalibrationv05UIFigure.Visible = 0;
+            app.EMONATIMSMixerCalibrationv05UIFigure.Visible = 1;
         end
 
         % Value changed function: RunRxCalibrationButton
         function RunRxCalibrationButtonValueChanged(app, event)
-            DSOVisa = app.ScopeDropDown.ItemsData;
+            
+            global SIM_MODE
+            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
+            
+            DSOVisa = app.ScopeDropDown.Value;
             DSOVisaType = DSOVisa.type;
             DSOVisaAddr = DSOVisa.addr;
             
-            AWGVisa = app.AWGDropDown.ItemsData;
+            AWGVisa = app.AWGDropDown.Value;
             AWGVisaType = AWGVisa.type;
             AWGVisaAddr = AWGVisa.addr;
             
@@ -166,8 +182,8 @@ classdef mixerCalibration < matlab.apps.AppBase
             
             app.RunRxCalibrationButton.Value = 0;
             % Disable/Enable visablity to bring app window back to the foreground
-            app.EMONATIMSMixerCalibrationv03UIFigure.Visible = 0;
-            app.EMONATIMSMixerCalibrationv03UIFigure.Visible = 1;
+            app.EMONATIMSMixerCalibrationv05UIFigure.Visible = 0;
+            app.EMONATIMSMixerCalibrationv05UIFigure.Visible = 1;
         end
 
         % Callback function
@@ -184,10 +200,12 @@ classdef mixerCalibration < matlab.apps.AppBase
             SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
             if ~SIM_MODE
                 
-                DSOVisa = app.ScopeDropDown.ItemsData;
+                DSOVisa = app.ScopeDropDown.Value;
                 DSOVisaType = DSOVisa.type;
                 DSOVisaAddr = DSOVisa.addr;
-              
+            
+    
+            
                 
                 app.Status.Text = 'Setting Up Filter Calibration';
                 app.Status.FontColor = 'Black';
@@ -253,8 +271,8 @@ classdef mixerCalibration < matlab.apps.AppBase
             
             app.AnalogRxFilterTuningButton.Value = 0;
             % Disable/Enable visablity to bring app window back to the foreground
-            app.EMONATIMSMixerCalibrationv03UIFigure.Visible = 0;
-            app.EMONATIMSMixerCalibrationv03UIFigure.Visible = 1;
+            app.EMONATIMSMixerCalibrationv05UIFigure.Visible = 0;
+            app.EMONATIMSMixerCalibrationv05UIFigure.Visible = 1;
             
         end
 
@@ -285,13 +303,13 @@ classdef mixerCalibration < matlab.apps.AppBase
         % Create UIFigure and components
         function createComponents(app)
 
-            % Create EMONATIMSMixerCalibrationv03UIFigure
-            app.EMONATIMSMixerCalibrationv03UIFigure = uifigure;
-            app.EMONATIMSMixerCalibrationv03UIFigure.Position = [100 100 397 291];
-            app.EMONATIMSMixerCalibrationv03UIFigure.Name = 'EMONA TIMS Mixer Calibration v0.3';
+            % Create EMONATIMSMixerCalibrationv05UIFigure
+            app.EMONATIMSMixerCalibrationv05UIFigure = uifigure;
+            app.EMONATIMSMixerCalibrationv05UIFigure.Position = [100 100 397 291];
+            app.EMONATIMSMixerCalibrationv05UIFigure.Name = 'EMONA TIMS Mixer Calibration v0.5';
 
             % Create TabGroup
-            app.TabGroup = uitabgroup(app.EMONATIMSMixerCalibrationv03UIFigure);
+            app.TabGroup = uitabgroup(app.EMONATIMSMixerCalibrationv05UIFigure);
             app.TabGroup.Position = [1 1 397 291];
 
             % Create MixerCalibrationTab
@@ -326,12 +344,6 @@ classdef mixerCalibration < matlab.apps.AppBase
             app.DeviceSettingsTab = uitab(app.TabGroup);
             app.DeviceSettingsTab.Title = 'Device Settings';
 
-            % Create EnableSimulatorModeCheckBox
-            app.EnableSimulatorModeCheckBox = uicheckbox(app.DeviceSettingsTab);
-            app.EnableSimulatorModeCheckBox.ValueChangedFcn = createCallbackFcn(app, @EnableSimulatorModeCheckBoxValueChanged, true);
-            app.EnableSimulatorModeCheckBox.Text = 'Enable Simulator Mode';
-            app.EnableSimulatorModeCheckBox.Position = [126 21 147 22];
-
             % Create ScopeDropDownLabel
             app.ScopeDropDownLabel = uilabel(app.DeviceSettingsTab);
             app.ScopeDropDownLabel.Position = [19 188 43 22];
@@ -365,36 +377,42 @@ classdef mixerCalibration < matlab.apps.AppBase
             app.RefreshLamp.Position = [361 22 20 20];
 
             % Create ReadSingleSidebandButton
-            app.ReadSingleSidebandButton = uibutton(app.EMONATIMSMixerCalibrationv03UIFigure, 'state');
+            app.ReadSingleSidebandButton = uibutton(app.EMONATIMSMixerCalibrationv05UIFigure, 'state');
             app.ReadSingleSidebandButton.ValueChangedFcn = createCallbackFcn(app, @ReadSingleSidebandButtonValueChanged, true);
             app.ReadSingleSidebandButton.Enable = 'off';
             app.ReadSingleSidebandButton.Text = 'Read Single Sideband';
-            app.ReadSingleSidebandButton.Position = [-168 -27 135 22];
+            app.ReadSingleSidebandButton.Position = [-253 -19 135 22];
 
             % Create VISADeviceAddressEditFieldLabel
-            app.VISADeviceAddressEditFieldLabel = uilabel(app.EMONATIMSMixerCalibrationv03UIFigure);
+            app.VISADeviceAddressEditFieldLabel = uilabel(app.EMONATIMSMixerCalibrationv05UIFigure);
             app.VISADeviceAddressEditFieldLabel.HorizontalAlignment = 'center';
             app.VISADeviceAddressEditFieldLabel.Position = [-245 116 120 22];
             app.VISADeviceAddressEditFieldLabel.Text = 'VISA Device Address';
 
             % Create VISADeviceAddressEditField
-            app.VISADeviceAddressEditField = uieditfield(app.EMONATIMSMixerCalibrationv03UIFigure, 'text');
+            app.VISADeviceAddressEditField = uieditfield(app.EMONATIMSMixerCalibrationv05UIFigure, 'text');
             app.VISADeviceAddressEditField.HorizontalAlignment = 'center';
             app.VISADeviceAddressEditField.FontSize = 11;
             app.VISADeviceAddressEditField.Position = [-321 95 278 22];
             app.VISADeviceAddressEditField.Value = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
 
             % Create VISADriverTypeEditFieldLabel
-            app.VISADriverTypeEditFieldLabel = uilabel(app.EMONATIMSMixerCalibrationv03UIFigure);
+            app.VISADriverTypeEditFieldLabel = uilabel(app.EMONATIMSMixerCalibrationv05UIFigure);
             app.VISADriverTypeEditFieldLabel.HorizontalAlignment = 'center';
             app.VISADriverTypeEditFieldLabel.Position = [-234 189 98 22];
             app.VISADriverTypeEditFieldLabel.Text = 'VISA Driver Type';
 
             % Create VISADriverTypeEditField
-            app.VISADriverTypeEditField = uieditfield(app.EMONATIMSMixerCalibrationv03UIFigure, 'text');
+            app.VISADriverTypeEditField = uieditfield(app.EMONATIMSMixerCalibrationv05UIFigure, 'text');
             app.VISADriverTypeEditField.HorizontalAlignment = 'center';
             app.VISADriverTypeEditField.Position = [-259 168 147 22];
             app.VISADriverTypeEditField.Value = 'KEYSIGHT';
+
+            % Create EnableSimulatorModeCheckBox
+            app.EnableSimulatorModeCheckBox = uicheckbox(app.EMONATIMSMixerCalibrationv05UIFigure);
+            app.EnableSimulatorModeCheckBox.ValueChangedFcn = createCallbackFcn(app, @EnableSimulatorModeCheckBoxValueChanged, true);
+            app.EnableSimulatorModeCheckBox.Text = 'Enable Simulator Mode';
+            app.EnableSimulatorModeCheckBox.Position = [-259 44 147 22];
         end
     end
 
@@ -407,7 +425,7 @@ classdef mixerCalibration < matlab.apps.AppBase
             createComponents(app)
 
             % Register the app with App Designer
-            registerApp(app, app.EMONATIMSMixerCalibrationv03UIFigure)
+            registerApp(app, app.EMONATIMSMixerCalibrationv05UIFigure)
 
             % Execute the startup function
             runStartupFcn(app, @startupFcn)
@@ -421,7 +439,7 @@ classdef mixerCalibration < matlab.apps.AppBase
         function delete(app)
 
             % Delete UIFigure when app is deleted
-            delete(app.EMONATIMSMixerCalibrationv03UIFigure)
+            delete(app.EMONATIMSMixerCalibrationv05UIFigure)
         end
     end
 end
