@@ -1,4 +1,4 @@
-function [] = buildTxCal(filtType,instrumentType,intrumentAddress)
+function [] = buildTxCal(filtType,instrumentType,instrumentAddress)
 %% buildTxCal.m
 %
 %	Build a Transmit Calibration sequence and send to AWG

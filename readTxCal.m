@@ -48,7 +48,7 @@ if exist('SIM_MODE','var')
         % Disable READ_DSO flag
         READ_DSO = 0;
     else
-        buildTxCal();
+        buildTxCal(filtType,instrumentType,instrumentAddress);
         % Enable the Read DSO flag
         READ_DSO = 1;
     end
@@ -61,7 +61,7 @@ else
     switch answer
         case 'Read DSO'
             % Build the ARB Files
-            buildTxCal();
+            buildTxCal(filtType,instrumentType,instrumentAddress);
             READ_DSO = 1;
         case 'Load .mat File'
             READ_DSO = 0;

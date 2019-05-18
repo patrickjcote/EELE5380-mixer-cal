@@ -69,7 +69,7 @@ if exist('SIM_MODE','var')
     else
         % Run the buildRxCal script to build the proper signals and
         % load them onto the AWG or export the ARB files.
-        buildRxCal(fb,LSB);
+        buildRxCal(fb,LSB,instrumentType,instrumentAddress);
         READ_DSO = 1;
     end
     
@@ -82,7 +82,7 @@ else
         case 'Read DSO'
             % Run the buildRxCal script to build the proper signals and
             % load them onto the AWG or export the ARB files.
-            buildRxCal(fb,LSB);
+            buildRxCal(fb,LSB,instrumentType,instrumentAddress);
             % User Selected Read DSO option
             % set READ_DSO flag
             READ_DSO = 1;
