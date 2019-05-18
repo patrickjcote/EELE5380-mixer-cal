@@ -5,12 +5,12 @@ function readTxCal(DSOVisaType,DSOVisaAddr,AWGVisaType,AWGVisaAddr)
 
 if ~exist('DSOVisaAddr','var')
     disp('Setting default DSO address');
-    DSOVisaAddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR'; 
+    DSOVisaAddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
 end
 
 if ~exist('DSOVisaType','var')
     disp('Setting default DSO type');
-    DSOVisaType = 'KEYSIGHT'; 
+    DSOVisaType = 'KEYSIGHT';
 end
 
 % Default AWG to Keysight 33500 awg
@@ -92,7 +92,7 @@ else
     end
 end
 
-if READ_DSO 
+if READ_DSO
     % Setup Rigol DSO using RxCal Mode Parameters
     setRigol(3,fb,[],DSOVisaType,DSOVisaAddr);
     [ Irx, ~ ] = readDSO(1,1,DSOVisaType,DSOVisaAddr);
