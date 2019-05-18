@@ -1,10 +1,31 @@
-function [] = buildMQAM(M,Fsym,N_syms,rng_seed,TX_CAL)
+function [] = buildMQAM(M,Fsym,N_syms,rng_seed,TX_CAL,filtType,instrumentType,instrumentAddress)
 % buildMQAM.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
 % Build ARB files for M-QAM system with random data and Tx calibration
 
-addpath('functions\');
+%% Instrument Type
+% Default to Keysight 33500 awg
+if ~exist('instrumentType','var')
+    % Default instrument type is KEYSIGHT
+    instrumentType = 'KEYSIGHT';
+end
+if ~exist('intrumentAddress','var')
+    % Default addresss
+    intrumentAddress = 'USB0::0x0957::0x2C07::MY52801516::0::INSTR';
+end
+
+% Set Instrument type if variable is numeric
+if isnumeric(instrumentType)
+    switch instrumentType
+        case 1
+            instrumentType = 'NI';
+        case 2
+            instrumentType = 'Agilent';
+        otherwise
+            instrumentType = 'KEYSIGHT';
+    end
+end
 
 
 sps = 50;           % Samples per Symbol        [Samp/sym]
@@ -35,12 +56,11 @@ Fsamp = sps*Fsym; % Wavegen Sample Rate
 Vpp = 1;    % ARB Output Peak-Peak Voltage
 try
     WRITE_TO_DISK = 0;
-    arbTo33500_2channel(Itx,Vpp,'Itx',Qtx,Vpp,'Qtx',Fsamp);
+	sendARB([Itx, Qtx], Vpp, Fsamp, filtType, instrumentType, instrumentAddress);
 catch
     warning('Failed sending signals to the AWG...');
     WRITE_TO_DISK = 1;
 end
-
 
 %% Write to Thumbdrive
 if WRITE_TO_DISK

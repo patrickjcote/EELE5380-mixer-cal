@@ -1,8 +1,19 @@
-function [] = buildTxCal()
-% build_TxCal_v1.m
+function [] = buildTxCal(filtType,instrumentType,intrumentAddress)
+%% buildTxCal.m
+%
+%	Build a Transmit Calibration sequence and send to AWG
+%
+% INPUTS:
+%       chnlFilt            Channel Filter (off,Normal,Step)->(0,1,2)
+%       instrumentType      VISA Instrument Type
+%                           1       - NI
+%                           2       - Agilent
+%                           'xxxx'  - User Specified
+%                           Default - KEYSIGHT
+%       intrumentAddress    VISA Instrument Address
+%
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
-% Build TIMS Tx calibration files
 
 %% Parameters
 % AWG Parameters
@@ -29,7 +40,7 @@ Vpp = 1;            % ARB Output Peak-Peak Voltage
 Fsamp = sps*fb;             % AWG sample rate           [Sa/s]
 try
     WRITE_TO_DISK = 0;
-    arbTo33500_2channel(Itx,Vpp,'Itx',Qtx,Vpp,'Qtx',Fsamp,1);
+	sendARB([Itx, Qtx],Vpp,Fsamp,filtType,instrumentType,instrumentAddress);
 catch
     warning('Failed sending signals to the AWG...');
     WRITE_TO_DISK = 1;
