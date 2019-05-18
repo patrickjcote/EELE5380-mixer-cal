@@ -113,20 +113,19 @@ classdef mixerCalibration < matlab.apps.AppBase
 
         % Value changed function: RunTxCalibrationButton
         function RunTxCalibrationButtonValueChanged(app, event)
+                        
+            DSOVisa = app.ScopeDropDown.ItemsData;
+            DSOVisaType = DSOVisa.type;
+            DSOVisaAddr = DSOVisa.addr;
             
-            global SIM_MODE
-            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
-            
-            global VISAtype;
-            global VISAaddr;
-            VISAaddr = app.VISADeviceAddressEditField.Value;
-            VISAtype = app.VISADriverTypeEditField.Value;
-            
+            AWGVisa = app.AWGDropDown.ItemsData;
+            AWGVisaType = AWGVisa.type;
+            AWGVisaAddr = AWGVisa.addr;
             
             app.Status.Text = 'Running Tx Calibration';
             app.Status.FontColor = 'Black';
             try
-                readTxCal
+                readTxCal(DSOVisaType,DSOVisaAddr,AWGVisaType,AWGVisaAddr)
                 app.Status.Text = 'Tx Calibration Successful';
                 app.Status.FontColor = [0.47 0.67 0.19];
             catch ME
@@ -143,20 +142,19 @@ classdef mixerCalibration < matlab.apps.AppBase
 
         % Value changed function: RunRxCalibrationButton
         function RunRxCalibrationButtonValueChanged(app, event)
-            global SIM_MODE
-            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
+            DSOVisa = app.ScopeDropDown.ItemsData;
+            DSOVisaType = DSOVisa.type;
+            DSOVisaAddr = DSOVisa.addr;
             
-            global VISAtype;
-            global VISAaddr;
-            VISAaddr = app.VISADeviceAddressEditField.Value;
-            VISAtype = app.VISADriverTypeEditField.Value;
-            
+            AWGVisa = app.AWGDropDown.ItemsData;
+            AWGVisaType = AWGVisa.type;
+            AWGVisaAddr = AWGVisa.addr;
             
             app.Status.Text = 'Running Rx Calibration';
             app.Status.FontColor = 'Black';
             
             try
-                readRxCal
+                readRxCal(DSOVisaType,DSOVisaAddr,AWGVisaType,AWGVisaAddr)
                 app.Status.Text = 'Rx Calibration Successful';
                 app.Status.FontColor = [0.47 0.67 0.19];
             catch ME
@@ -174,11 +172,7 @@ classdef mixerCalibration < matlab.apps.AppBase
 
         % Callback function
         function BuildRxCalFilesButtonValueChanged(app, event)
-            global SIM_MODE
-            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
-            buildRxCal
-            app.BuildRxCalFilesButton.Value = 0;
-            app.RunRxCalibrationButton.Enable = 1;
+
             
         end
 
@@ -190,8 +184,10 @@ classdef mixerCalibration < matlab.apps.AppBase
             SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
             if ~SIM_MODE
                 
-                VISAaddr = app.VISADeviceAddressEditField.Value;
-                VISAtype = app.VISADriverTypeEditField.Value;
+                DSOVisa = app.ScopeDropDown.ItemsData;
+                DSOVisaType = DSOVisa.type;
+                DSOVisaAddr = DSOVisa.addr;
+              
                 
                 app.Status.Text = 'Setting Up Filter Calibration';
                 app.Status.FontColor = 'Black';
@@ -200,7 +196,7 @@ classdef mixerCalibration < matlab.apps.AppBase
                     % Send Pulse to AWG
                     buildFiltCal();
                     % Set Rigol to Filter Viewing mode
-                    setRigol(4,[],[],VISAtype,VISAaddr);
+                    setRigol(4,[],[],DSOVisaType,DSOVisaAddr);
                     
                     app.Status.Text = 'DSO Set Successful';
                     app.Status.FontColor = [0.47 0.67 0.19];
