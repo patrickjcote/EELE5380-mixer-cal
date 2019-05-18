@@ -34,7 +34,7 @@ if READ_DSO
 
     
     
-    setRigol(1,Fsym,N_syms,VISAtype,VISAaddr);
+    setDSO(1,Fsym,N_syms,VISAtype,VISAaddr);
     [ Irx, ~ ] = readDSO(1,1,VISAtype,VISAaddr);
     [ Qrx, tq ] = readDSO(2,0,VISAtype,VISAaddr);
     % Save

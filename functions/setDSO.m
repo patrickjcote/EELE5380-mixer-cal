@@ -1,10 +1,8 @@
-function [] = setRigol(mode,Fsym,Nsyms,instrumentType,intrumentAddress)
-%% readRigol.m
-% 2019 - Patrick Cote
-% EELE 5380 - Adv. Signals and Systems
-
+function [] = setDSO(mode,Fsym,Nsyms,instrumentType,intrumentAddress)
+%% setDSO.m
+%
 % Function to read the Rigol Oscilloscope
-
+%
 % INPUTS:
 %       mode
 %                           1       - M-QAM Read
@@ -19,7 +17,9 @@ function [] = setRigol(mode,Fsym,Nsyms,instrumentType,intrumentAddress)
 %                           'xxxx'  - User Specified
 %                           Default - KEYSIGHT
 %       intrumentAddress    VISA Instrument Address, default Rigol DS4400
-
+%
+% 2019 - Patrick Cote
+% EELE 5380 - Adv. Signals and Systems
 
 %% Input Check
 if ~exist('instrumentType','var')

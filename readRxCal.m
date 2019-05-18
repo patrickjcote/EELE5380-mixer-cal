@@ -94,7 +94,7 @@ end
 
 if READ_DSO
     % Setup Rigol DSO using RxCal Mode Parameters
-    setRigol(3,fb,[],DSOVisaType,DSOVisaAddr);
+    setDSO(3,fb,[],DSOVisaType,DSOVisaAddr);
     [ Irx, ~ ] = readDSO(1,1,DSOVisaType,DSOVisaAddr);
     [ Qrx, tq ] = readDSO(2,0,DSOVisaType,DSOVisaAddr);
     % Save
