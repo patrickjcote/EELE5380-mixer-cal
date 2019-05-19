@@ -1,24 +1,28 @@
-% readTxCal.m
-% 2019 - Patrick Cote
-% EELE 5380 - Adv. Signals and Systems
+function readTxCal(DSOVisaType,DSOVisaAddr,AWGVisaType,AWGVisaAddr)
+%% readRxCal.m
 
-%% GUI Test
-% If SIM_MODE is not declared this script is not being run from the GUI app
-%   so clear the workspace
-if ~exist('SIM_MODE','var')
-    clear; 
-end
+%% Check for VISA Addresses and Type, if none, set defaults
 
-%% Check for VISA Address and Type, if none, set defaults
-if ~exist('VISAaddr','var')
+if ~exist('DSOVisaAddr','var')
     disp('Setting default DSO address');
-    VISAaddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR'; 
+    DSOVisaAddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
 end
 
-if ~exist('VISAtype','var')
+if ~exist('DSOVisaType','var')
     disp('Setting default DSO type');
-    VISAtype = 'KEYSIGHT'; 
+    DSOVisaType = 'KEYSIGHT';
 end
+
+% Default AWG to Keysight 33500 awg
+if ~exist('AWGVisaType','var')
+    % Default instrument type is KEYSIGHT
+    AWGVisaType = 'KEYSIGHT';
+end
+if ~exist('AWGVisaAddr','var')
+    % Default addresss
+    AWGVisaAddr = 'USB0::0x0957::0x2C07::MY52801516::0::INSTR';
+end
+
 
 %% Add Functions Path
 try
@@ -48,7 +52,7 @@ if exist('SIM_MODE','var')
         % Disable READ_DSO flag
         READ_DSO = 0;
     else
-        buildTxCal();
+        buildTxCal(0,AWGVisaType,AWGVisaAddr);
         % Enable the Read DSO flag
         READ_DSO = 1;
     end
@@ -61,7 +65,7 @@ else
     switch answer
         case 'Read DSO'
             % Build the ARB Files
-            buildTxCal();
+            buildTxCal(0,AWGVisaType,AWGVisaAddr);
             READ_DSO = 1;
         case 'Load .mat File'
             READ_DSO = 0;
@@ -75,9 +79,9 @@ while RUN_TX_CAL
     if READ_DSO 
         % If READ_DSO Flag is set
         % Setup Rigol DSO using TxCal Mode Parameters
-        setDSO(2,fb,[],VISAtype,VISAaddr);
+        setDSO(2,fb,[],DSOVisaType,DSOVisaAddr);
         % Read in RF Data from DSO
-        [ RFrx, trx ] = readDSO(1,1,VISAtype,VISAaddr);
+        [ RFrx, trx ] = readDSO(1,1,DSOVisaType,DSOVisaAddr);
         % Save the Uncalibrated Data
         save('Data Files\uncalibrated_RFrx.mat','RFrx','trx')
     else
@@ -250,3 +254,7 @@ end
 save('Calibration Files\txMixerCoefs.mat','Ainv','Idc','Qdc')
 disp('Tx Cal Complete...');
 disp('Calibration coeffiencts saved to "Calibration Files\txMixerCoefs.mat"');
+
+
+end
+

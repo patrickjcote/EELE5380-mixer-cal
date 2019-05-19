@@ -1,25 +1,26 @@
-% readRxCal.m
-% 2019 - Patrick Cote
-% EELE 5380 - Adv Signals
-% Calculate Rx calibration matrix from USB or LSB tone
-%   test correction with ideal upconversion
+function readRxCal(DSOVisaType,DSOVisaAddr,AWGVisaType,AWGVisaAddr)
+%% readRxCal.m
 
-%% GUI Test
-% If SIM_MODE is not declared this script is not being run from the GUI app
-%   so clear the workspace
-if ~exist('SIM_MODE','var')
-    clear;
-end
+%% Check for VISA Addresses and Type, if none, set defaults
 
-%% Check for VISA Address and Type, if none, set defaults
-if ~exist('VISAaddr','var')
+if ~exist('DSOVisaAddr','var')
     disp('Setting default DSO address');
-    VISAaddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
+    DSOVisaAddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
 end
 
-if ~exist('VISAtype','var')
+if ~exist('DSOVisaType','var')
     disp('Setting default DSO type');
-    VISAtype = 'KEYSIGHT';
+    DSOVisaType = 'KEYSIGHT';
+end
+
+% Default AWG to Keysight 33500 awg
+if ~exist('AWGVisaType','var')
+    % Default instrument type is KEYSIGHT
+    AWGVisaType = 'KEYSIGHT';
+end
+if ~exist('AWGVisaAddr','var')
+    % Default addresss
+    AWGVisaAddr = 'USB0::0x0957::0x2C07::MY52801516::0::INSTR';
 end
 
 
@@ -69,7 +70,7 @@ if exist('SIM_MODE','var')
     else
         % Run the buildRxCal script to build the proper signals and
         % load them onto the AWG or export the ARB files.
-        buildRxCal(fb,LSB);
+        buildRxCal(fb,LSB,AWGVisaType,AWGVisaAddr);
         READ_DSO = 1;
     end
     
@@ -82,7 +83,7 @@ else
         case 'Read DSO'
             % Run the buildRxCal script to build the proper signals and
             % load them onto the AWG or export the ARB files.
-            buildRxCal(fb,LSB);
+            buildRxCal(fb,LSB,AWGVisaType,AWGVisaAddr);
             % User Selected Read DSO option
             % set READ_DSO flag
             READ_DSO = 1;
@@ -92,11 +93,10 @@ else
 end
 
 if READ_DSO
-    
     % Setup Rigol DSO using RxCal Mode Parameters
-    setDSO(3,fb,[],VISAtype,VISAaddr);
-    [ Irx, ~ ] = readDSO(1,1,VISAtype,VISAaddr);
-    [ Qrx, tq ] = readDSO(2,0,VISAtype,VISAaddr);
+    setDSO(3,fb,[],DSOVisaType,DSOVisaAddr);
+    [ Irx, ~ ] = readDSO(1,1,DSOVisaType,DSOVisaAddr);
+    [ Qrx, tq ] = readDSO(2,0,DSOVisaType,DSOVisaAddr);
     % Save
     save(['Data Files\rxCal_SB',num2str(LSB),'.mat'],'Irx','Qrx','tq');
 else
@@ -221,3 +221,6 @@ fftPlot(RFcomp,fs,[90e3 110e3]);
 clear title
 title('Calibrated');
 ylim([-85 0]);
+
+end
+

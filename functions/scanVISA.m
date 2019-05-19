@@ -9,7 +9,7 @@ function [devices] = scanVISA()
 %       devices.IDN     Device Name returned from *IDN? query
 %       devices.type    Driver type ('keysight','ni','tek',...)
 %       devices.addr    Device address, ie. USB0::0x0957::0x2C07::MY52801516::0::INSTR
-%  
+%
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
 
@@ -19,7 +19,7 @@ if isempty(visainfo.InstalledAdaptors)
     error('No VISA Adapters found. Install a compatible VISA Driver. "Keysight I/O Support Package" can be found in MATLAB Add-Ons');
 end
 
-%% Check Agilent 
+%% Check Agilent
 % Keysight I/O Driver shows compatibility for both Keysight and agilent so
 % to prevent multiple access attempts, remove Agilent from the list of
 % possible adaptors
@@ -53,20 +53,28 @@ for n = length(visainfo.InstalledAdaptors)
         % For each Constructor Object in nth adaptor
         for k = 1:length(visaDriver.ObjectConstructorName)
             % Load the kth VISA object
-            VISAobj = eval(visaDriver.ObjectConstructorName{k});      
+            VISAobj = eval(visaDriver.ObjectConstructorName{k});
             try
+                VISAobj.Timeout = 1;       % sec
+                VISAobj.Timeout = 1;       % sec
                 % Try connecting to the device
                 fopen(VISAobj);
-                % If connection success, increment the device index
-                deviceNdx = deviceNdx + 1;
-                % Save info in devices{} struct
-                devices{deviceNdx}.IDN  = query(VISAobj, '*IDN?');
-                devices{deviceNdx}.addr = get(VISAobj, 'RsrcName');
-                devices{deviceNDX}.type = visainfo.InstalledAdaptors{n};
-                disp(['Found: ', devices{deviceNdx}.IDN]);
+                % Check ID
+                IDN = query(VISAobj, '*IDN?');
+                if isempty(IDN)
+                    error('Empty IDN String');
+                else
+                    % If connection success, increment the device index
+                    deviceNdx = deviceNdx + 1;
+                    % Save info in devices{} struct
+                    devices{deviceNdx}.IDN  = IDN;
+                    devices{deviceNdx}.addr = get(VISAobj, 'RsrcName');
+                    devices{deviceNDX}.type = visainfo.InstalledAdaptors{n};
+                    disp(['Found: ', devices{deviceNdx}.IDN]);
+                end
             catch
                 % If the device is not connected or if it has already been
-                % accessed the "fopen(VISAobj)" will throw an error.  
+                % accessed the "fopen(VISAobj)" will throw an error.
                 % Catch the error and continue the loop
                 continue;
             end
@@ -77,7 +85,7 @@ end
 %% If no Devices Found
 if ~(deviceNdx)
     % Warn that no VISA Devices were found
-    warning('No VISA devices found...');
+    disp('No VISA devices found...');
     % Set the
     devices = 0;
 end
