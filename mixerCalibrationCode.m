@@ -207,7 +207,6 @@ classdef mixerCalibration < matlab.apps.AppBase
                 AWGVisa = app.AWGDropDown.Value;
                 AWGVisaType = AWGVisa.type;
                 AWGVisaAddr = AWGVisa.addr;
-    
             
                 
                 app.Status.Text = 'Setting Up Filter Calibration';
