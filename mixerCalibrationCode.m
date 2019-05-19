@@ -16,12 +16,12 @@ classdef mixerCalibration < matlab.apps.AppBase
         AWGDropDown                   matlab.ui.control.DropDown
         RefreshDeviceListButton       matlab.ui.control.Button
         RefreshLamp                   matlab.ui.control.Lamp
+        EnableSimulatorModeCheckBox   matlab.ui.control.CheckBox
         ReadSingleSidebandButton      matlab.ui.control.StateButton
         VISADeviceAddressEditFieldLabel  matlab.ui.control.Label
         VISADeviceAddressEditField    matlab.ui.control.EditField
         VISADriverTypeEditFieldLabel  matlab.ui.control.Label
         VISADriverTypeEditField       matlab.ui.control.EditField
-        EnableSimulatorModeCheckBox   matlab.ui.control.CheckBox
     end
 
     
@@ -41,8 +41,8 @@ classdef mixerCalibration < matlab.apps.AppBase
             drawnow
             
             % Find Devices          
-%             devices = scanVISA();
-                            load('scanVisaOutput3.mat','devices');
+            devices = scanVISA();
+%           load('scanVisaOutput3.mat','devices');
             
             if ~iscell(devices)
                 % Devices structure is empty, load Items
@@ -228,7 +228,7 @@ classdef mixerCalibration < matlab.apps.AppBase
                         plot(a.tq,a.F1rx,a.tq,a.F2rx);
                         grid on; grid minor;
                         legend('Filter One','Filter Two');
-                        title('Example of a Untuned Filter Response (Not Live Data)');
+                        title('Example of an Untuned Filter Response (Not Live Data)');
                         
                         a = load('Data Files\filter_tuned.mat');
                         figure
@@ -257,14 +257,14 @@ classdef mixerCalibration < matlab.apps.AppBase
                     plot(a.tq,a.F1rx,a.tq,a.F2rx);
                     grid on; grid minor;
                     legend('Filter One','Filter Two');
-                    title('Example Untuned Filter Response');
+                    title('Example of an Untuned Filter Response');
                     
                     a = load('Data Files\filter_tuned.mat');
                     figure
                     plot(a.tq,a.F1rx,a.tq,a.F2rx);
                     grid on; grid minor;
                     legend('Filter One','Filter Two');
-                    title('Example Tuned Filter Response');
+                    title('Example of a tuned Filter Response');
                     
                 end
             end
@@ -289,6 +289,16 @@ classdef mixerCalibration < matlab.apps.AppBase
         function EnableSimulatorModeCheckBoxValueChanged(app, event)
             global SIM_MODE
             SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
+            
+            if SIM_MODE
+            % Enable Calibration Function Buttons
+                app.RunRxCalibrationButton.Enable = 1;
+                app.RunTxCalibrationButton.Enable = 1;
+                app.AnalogRxFilterTuningButton.Enable = 1;
+                app.Status.Text = 'Entered Simulator Mode.';
+            else
+                refreshDevices(app);
+            end
         end
 
         % Button pushed function: RefreshDeviceListButton
@@ -376,6 +386,12 @@ classdef mixerCalibration < matlab.apps.AppBase
             app.RefreshLamp = uilamp(app.DeviceSettingsTab);
             app.RefreshLamp.Position = [361 22 20 20];
 
+            % Create EnableSimulatorModeCheckBox
+            app.EnableSimulatorModeCheckBox = uicheckbox(app.DeviceSettingsTab);
+            app.EnableSimulatorModeCheckBox.ValueChangedFcn = createCallbackFcn(app, @EnableSimulatorModeCheckBoxValueChanged, true);
+            app.EnableSimulatorModeCheckBox.Text = 'Enable Simulator Mode';
+            app.EnableSimulatorModeCheckBox.Position = [126 21 147 22];
+
             % Create ReadSingleSidebandButton
             app.ReadSingleSidebandButton = uibutton(app.EMONATIMSMixerCalibrationv05UIFigure, 'state');
             app.ReadSingleSidebandButton.ValueChangedFcn = createCallbackFcn(app, @ReadSingleSidebandButtonValueChanged, true);
@@ -407,12 +423,6 @@ classdef mixerCalibration < matlab.apps.AppBase
             app.VISADriverTypeEditField.HorizontalAlignment = 'center';
             app.VISADriverTypeEditField.Position = [-259 168 147 22];
             app.VISADriverTypeEditField.Value = 'KEYSIGHT';
-
-            % Create EnableSimulatorModeCheckBox
-            app.EnableSimulatorModeCheckBox = uicheckbox(app.EMONATIMSMixerCalibrationv05UIFigure);
-            app.EnableSimulatorModeCheckBox.ValueChangedFcn = createCallbackFcn(app, @EnableSimulatorModeCheckBoxValueChanged, true);
-            app.EnableSimulatorModeCheckBox.Text = 'Enable Simulator Mode';
-            app.EnableSimulatorModeCheckBox.Position = [-259 44 147 22];
         end
     end
 
