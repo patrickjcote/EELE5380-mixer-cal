@@ -1,13 +1,45 @@
-function [] = buildRxCal(fb,LSB_FLAG)
+function [] = buildRxCal(fb,LSB_FLAG,filtType,instrumentType,instrumentAddress)
 %% Build Rx Single Tone LSB/USB
-fprintf('\n\n');
-disp('------ Build Rx Calibration AWG Files --------');
-disp('');
-disp('This function builds baseband sine and cosine waves to be played');
-disp('out of the I and Q channels of the AWG. The signals are predistorted');
-disp('using the Tx calibration matrix such that when upconverted')
-disp('a perfect, single sideband will be seen in the RF spectrum');
-fprintf('\n');
+%	This function builds baseband sine and cosine waves to be played
+%	out of the I and Q channels of the AWG. The signals are predistorted
+%	using the Tx calibration matrix such that when upconverted
+%	a perfect, single sideband will be seen in the RF spectrum
+%
+% INPUTS:
+%       fb                  Baseband Frequency [Hz]
+%       LSB                 RF Sideband to build Flag, 1->Lower, 0->Upper
+%       chnlFilt            Channel Filter (off,Normal,Step)->(0,1,2)
+%       instrumentType      VISA Instrument Type
+%                           1       - NI
+%                           2       - Agilent
+%                           'xxxx'  - User Specified
+%                           Default - KEYSIGHT
+%       intrumentAddress    VISA Instrument Address
+%
+%
+
+%% Instrument Type
+% Default to Keysight 33500 awg
+if ~exist('instrumentType','var')
+    % Default instrument type is KEYSIGHT
+    instrumentType = 'KEYSIGHT';
+end
+if ~exist('instrumentAddress','var')
+    % Default addresss
+    instrumentAddress = 'USB0::0x0957::0x2C07::MY52801516::0::INSTR';
+end
+
+% Set Instrument type if variable is numeric
+if isnumeric(instrumentType)
+    switch instrumentType
+        case 1
+            instrumentType = 'NI';
+        case 2
+            instrumentType = 'Agilent';
+        otherwise
+            instrumentType = 'KEYSIGHT';
+    end
+end
 
 %%
 % If the Sideband selector flag LSB is not set, prompt for one
@@ -71,7 +103,7 @@ Qtxp = txCor(2,:)';
 Vpp = 1;    % ARB Output Peak-Peak Voltage
 try
     WRITE_TO_DISK = 0;
-    arbTo33500_2channel(Itxp,Vpp,'Itx',Qtxp,Vpp,'Qtx',Fsamp);
+	sendARB([Itxp, Qtxp],Vpp,Fsamp,filtType,instrumentType,instrumentAddress);
 catch
     warning('Failed sending signals to the AWG...');
     WRITE_TO_DISK = 1;

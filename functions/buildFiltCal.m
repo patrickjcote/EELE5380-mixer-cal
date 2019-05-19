@@ -1,5 +1,39 @@
-function [] = buildFiltCal()
+function [] = buildFiltCal(instrumentType,instrumentAddress)
+%% buildFiltCal.m
+%
+%   Build Impluse and send to AWG for analog filter tuning
+%
+% INPUTS:
+%       instrumentType      VISA Instrument Type
+%                           1       - NI
+%                           2       - Agilent
+%                           'xxxx'  - User Specified
+%                           Default - KEYSIGHT
+%       intrumentAddress    VISA Instrument Address
+%
 
+%% Instrument Type
+% Default to Keysight 33500 awg
+if ~exist('instrumentType','var')
+    % Default instrument type is KEYSIGHT
+    instrumentType = 'KEYSIGHT';
+end
+if ~exist('intrumentAddress','var')
+    % Default addresss
+    intrumentAddress = 'USB0::0x0957::0x2C07::MY52801516::0::INSTR';
+end
+
+% Set Instrument type if variable is numeric
+if isnumeric(instrumentType)
+    switch instrumentType
+        case 1
+            instrumentType = 'NI';
+        case 2
+            instrumentType = 'Agilent';
+        otherwise
+            instrumentType = 'KEYSIGHT';
+    end
+end
 
 %% Build Pulse
 % Parameters
@@ -17,7 +51,7 @@ Itx(N:N+N-1) = ones(N,1);
 Vpp = 5;    % ARB Output Peak-Peak Voltage
 try
     WRITE_TO_DISK = 0;
-    arbTo33500_1channel(Itx,Vpp,'Itx',Fsamp,0);
+    sendARB(Itx,Vpp,Fsamp,0,instrumentType,instrumentAddress);
 catch
     warning('Failed sending signal to the AWG...');
     WRITE_TO_DISK = 1;
