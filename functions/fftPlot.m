@@ -1,5 +1,5 @@
-function [P, f] = fftPlot( x, fs, f_range)
-% fftPlot.m - Plots the FFT of the input signal x
+function [P, f] = fftPlot( x, fs, f_range, titleVec)
+%% fftPlot.m - Plots the FFT of the input signal x
 %
 %   [P, f] = fftPlot( x, fs, f_range, windowNdx, sideNdx )
 %
@@ -31,14 +31,19 @@ A = A(1:floor(n/2)+1);
  
 
 %% Plot
-if ~exist('f_range','var') 
+if ~exist('f_range','var')
+    f_range = [f(1) f(end)];
+elseif f_range<0
     f_range = [f(1) f(end)];
 end
 
 binSize = fs/n;
-titleVec = ['FFT(x) - ',num2str(binSize),' Hz/bin'];
 
-figure;
+if ~exist('titleVec','var')
+titleVec = ['FFT(x) - ',num2str(binSize),' Hz/bin'];
+end
+
+
 plot(f,P); grid;
 title(titleVec);
 xlim(f_range);

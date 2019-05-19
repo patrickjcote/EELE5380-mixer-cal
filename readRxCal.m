@@ -36,17 +36,17 @@ disp('Reading Rx Calibration...');
 
 % Baseband Freq
 prompt = {'Enter Baseband Tone Frequency in Hz:'};
-title = 'Input';
+dialogTitle = 'Input';
 dims = [1 35];
-definput = {'1000'};
-answer = inputdlg(prompt,title,dims,definput);
+definput = {'5000'};
+answer = inputdlg(prompt,dialogTitle,dims,definput);
 if isempty(answer)
     fb = 1e3;
 else
     fb = str2num(answer{1});
 end
 if isempty(fb)
-    fb = 1e3;       % Symbol Rate
+    fb = 5e3;       % Symbol Rate
 end
 fprintf('\nBaseband Frequency set to: %d Hz\n\n',fb);
 
@@ -188,10 +188,13 @@ Qdc = mean(Qrx)
 % Plot
 figure;
 plot(Irx_raw,Qrx_raw,'.',Irx,Qrx,'.');
+title('Baseband IQ Plot');
 pbaspect([1 1 1]);
 grid on; grid minor;
 axis([ -1.5 1.5 -1.5 1.5])
+xlabel('In-Phase');ylabel('Quadrature');
 legend('Rx','Corrected')
+
 
 
 %% ------ Upconvert Test ------
@@ -213,13 +216,12 @@ Qrx = rxCorrected(2,:)';
 RFcomp = Irx.*ilo +  Qrx.*qlo;
 
 %% Plot FFTs
-fftPlot(RFrx,fs,[90e3 110e3]);
-clear title
-title('Uncalibrated');
+figure
+subplot(211)
+fftPlot(RFrx,fs,[90e3 110e3],'Uncalibrated Data - Upconverted with 100kHz LO');
 ylim([-85 0]);
-fftPlot(RFcomp,fs,[90e3 110e3]);
-clear title
-title('Calibrated');
+subplot(212)
+fftPlot(RFcomp,fs,[90e3 110e3],'Calibrated Data - Upconverted with 100kHz LO');
 ylim([-85 0]);
 
 end

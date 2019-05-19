@@ -69,7 +69,7 @@ for n = length(visainfo.InstalledAdaptors)
                     % Save info in devices{} struct
                     devices{deviceNdx}.IDN  = IDN;
                     devices{deviceNdx}.addr = get(VISAobj, 'RsrcName');
-                    devices{deviceNDX}.type = visainfo.InstalledAdaptors{n};
+                    devices{deviceNdx}.type = visainfo.InstalledAdaptors{n};
                     disp(['Found: ', devices{deviceNdx}.IDN]);
                 end
             catch

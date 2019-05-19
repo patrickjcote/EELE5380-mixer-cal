@@ -204,6 +204,9 @@ classdef mixerCalibration < matlab.apps.AppBase
                 DSOVisaType = DSOVisa.type;
                 DSOVisaAddr = DSOVisa.addr;
             
+                AWGVisa = app.AWGDropDown.Value;
+                AWGVisaType = AWGVisa.type;
+                AWGVisaAddr = AWGVisa.addr;
     
             
                 
@@ -212,9 +215,9 @@ classdef mixerCalibration < matlab.apps.AppBase
                 try
                     
                     % Send Pulse to AWG
-                    buildFiltCal();
+                    buildFiltCal(AWGVisaType,AWGVisaAddr);
                     % Set Rigol to Filter Viewing mode
-                    setRigol(4,[],[],DSOVisaType,DSOVisaAddr);
+                    setDSO(4,[],[],DSOVisaType,DSOVisaAddr);
                     
                     app.Status.Text = 'DSO Set Successful';
                     app.Status.FontColor = [0.47 0.67 0.19];
@@ -234,8 +237,8 @@ classdef mixerCalibration < matlab.apps.AppBase
                         figure
                         plot(a.tq,a.F1rx,a.tq,a.F2rx);
                         grid on; grid minor;
-                        legend('Filter One','Filter Two (Not Live Data)');
-                        title('Example of a Tuned Filter Response');
+                        legend('Filter One','Filter Two');
+                        title('Example of a Tuned Filter Response (Not Live Data)');
                         
                     end
                     
