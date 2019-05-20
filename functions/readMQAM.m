@@ -1,4 +1,4 @@
-function [SNR, BER, errs] = readMQAM(M,Fsym,N_syms,rng_seed,RX_CAL,VISAtype,VISAaddr)
+function [rxBits,rxLLRs] = readMQAM(M,Fsym,N_syms,TXdataBlock,RX_CAL,VISAtype,VISAaddr)
 % read_MQAM.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv Signals
@@ -72,10 +72,7 @@ Irx = filter(b,1,Irx);
 Qrx = filter(b,1,Qrx);
 
 %% Frame Sync
-% Build Sync Syms
-rng(rng_seed);          % Random Seed
-dataTx = randi([0 1],log2(M)*N_syms,1);
-syncSyms  = qammod(dataTx,M,'gray','InputType','bit','UnitAveragePower',true,'PlotConstellation',false);
+syncSyms  = qammod(TXdataBlock,M,'gray','InputType','bit','UnitAveragePower',true,'PlotConstellation',false);
 % Synchronize
 [symsRx, sto, lag] = frameSync(Irx,Qrx,syncSyms,Rxsps,length(syncSyms));
 
@@ -99,22 +96,9 @@ noiseRx = symsRx - syncSyms;
 SNR = 10*log10(mean(abs(syncSyms).^2)/mean(abs(noiseRx).^2))
 
 %% Demod
-dataRx = qamdemod(symsRx,M,'gray','OutputType','bit','UnitAveragePower',true);
+rxBits = qamdemod(symsRx,M,'gray','OutputType','bit','UnitAveragePower',true);
 
-%% Error Calc
-errs = sum(dataRx ~= dataTx)
-BER = errs/length(dataRx)
-
-%% Plot
-figure;
-errs = dataRx ~= dataTx;
-ndx = ceil(find(errs==1)/log2(M));
-plot(real(symsRx),imag(symsRx),'.',real(symsRx(ndx)),imag(symsRx(ndx)),'r.')
-pbaspect([1 1 1]);
-axis([-1.5 1.5 -1.5 1.5]);
-xlabel('I');ylabel('Q');
-title('Received Constellation');
-grid on; grid minor;
+rxLLRs = qamdemod(symsRx,M,'gray','OutputType','llr','UnitAveragePower',true);
 
 
 end

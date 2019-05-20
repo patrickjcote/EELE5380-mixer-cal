@@ -1,4 +1,4 @@
-function [] = buildMQAM(M,Fsym,N_syms,rng_seed,TX_CAL,filtType,instrumentType,instrumentAddress)
+function [] = buildMQAM(M,Fsym,dataBlock,TX_CAL,filtType,instrumentType,instrumentAddress)
 % buildMQAM.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
@@ -37,8 +37,7 @@ sps = 50;           % Samples per Symbol        [Samp/sym]
 
 
 %% Build Data Block and Modulate
-rng(rng_seed);          % Random Seed
-dataBlock = randi([0 1],log2(M)*N_syms,1);
+
 modBlock  = qammod(dataBlock,M,'gray','InputType','bit','UnitAveragePower',true);
 
 %% Build Output
