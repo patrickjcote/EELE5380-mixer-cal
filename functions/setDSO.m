@@ -84,9 +84,9 @@ if mode == 1
     % Turn on 20MHz Bandwidth Filters
     fprintf(visaObj,':CHANnel1:BWLimit 20M');
     fprintf(visaObj,':CHANnel2:BWLimit 20M');
-    % Adjust Vertical Scale to 0.5 V/div
-    fprintf(visaObj,':CHANnel1:SCALe 0.5');
-    fprintf(visaObj,':CHANnel2:SCALe 0.5');
+    % Adjust Vertical Scale to 1 V/div
+    fprintf(visaObj,':CHANnel1:SCALe 1');
+    fprintf(visaObj,':CHANnel2:SCALe 1');
     % Turn Ch1 and Ch2 on, Turn Ch3 off
     fprintf(visaObj,':CHANnel1:DISP 1');
     fprintf(visaObj,':CHANnel2:DISP 1');
