@@ -5,18 +5,26 @@ function [SNR, BER, errs] = readMQAM(M,Fsym,N_syms,rng_seed,RX_CAL,VISAtype,VISA
 % Read in M-QAM sequence with random data
 
 
+global SIM_MODE
+if isempty(SIM_MODE)
+    SIM_MODE = 0;
+end
+
 %% Read DSO and Calc IQ Correction Matrix
 % % Read in data
-
-answer = questdlg('Data Source: ', ...
-    'Data Source', ...
-    'Read DSO','Load .mat File','Read DSO');
-% Handle response
-switch answer
-    case 'Read DSO'
-        READ_DSO = 1;
-    case 'Load .mat File'
-        READ_DSO = 0;
+if ~SIM_MODE
+    answer = questdlg('Data Source: ', ...
+        'Data Source', ...
+        'Read DSO','Load .mat File','Read DSO');
+    % Handle response
+    switch answer
+        case 'Read DSO'
+            READ_DSO = 1;
+        case 'Load .mat File'
+            READ_DSO = 0;
+    end
+else
+    READ_DSO = 0;
 end
     
 if READ_DSO
@@ -32,8 +40,6 @@ if READ_DSO
         VISAtype = 'KEYSIGHT';
     end
 
-    
-    
     setDSO(1,Fsym,N_syms,VISAtype,VISAaddr);
     [ Irx, ~ ] = readDSO(1,1,VISAtype,VISAaddr);
     [ Qrx, tq ] = readDSO(2,0,VISAtype,VISAaddr);
@@ -56,9 +62,10 @@ agc = mean(abs(Irx+1i*Qrx));
 Irx = Irx/agc;
 Qrx = Qrx/agc;
 %% Matched Filter - Averaging FIR
-fs = 1/mean(diff(tq));                  % Sample Rate
-Rxsps = round(fs/Fsym);                   % Samples per symbol
-b = 1/Rxsps*0.8*ones(Rxsps*0.8,1);      % Filter Taps
+fs = 1/mean(diff(tq));                      % Sample Rate
+Rxsps = round(fs/Fsym);                     % Samples per symbol
+K = 0.8;                                % Filter Tune
+b = 1/Rxsps*K*ones(Rxsps*K,1);          % Filter Taps
 Irx = filter(b,1,Irx);
 Qrx = filter(b,1,Qrx);
 
@@ -85,8 +92,6 @@ phaseOffset = mean(wrapTo180(phaseOFF));
 % Derotate symbols
 symsRx = symsRx.*exp(-1i*phaseOffset*pi/180);
 
-
-
 %% SNR Calc
 noiseRx = symsRx - syncSyms;
 SNR = 10*log10(mean(abs(syncSyms).^2)/mean(abs(noiseRx).^2))
@@ -108,7 +113,6 @@ axis([-1.5 1.5 -1.5 1.5]);
 xlabel('I');ylabel('Q');
 title('Received Constellation');
 grid on; grid minor;
-
 
 
 end

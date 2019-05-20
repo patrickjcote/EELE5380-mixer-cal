@@ -48,8 +48,8 @@ classdef mqamApp < matlab.apps.AppBase
             drawnow
             
             % Find Devices          
-%             devices = scanVISA();
-          load('Data Files\scanVisaOutput3.mat','devices');
+            devices = scanVISA();
+%           load('Data Files\scanVisaOutput3.mat','devices');
             
             if ~iscell(devices)
                 % Devices structure is empty, load Items
@@ -125,11 +125,17 @@ classdef mqamApp < matlab.apps.AppBase
 
         % Value changed function: SendButton
         function SendButtonValueChanged(app, event)
-
+            global SIM_MODE
+            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
             
-            AWGVisa = app.AWGDropDown.Value;
-            AWGVisaType = AWGVisa.type;
-            AWGVisaAddr = AWGVisa.addr;
+            if ~SIM_MODE
+                AWGVisa = app.AWGDropDown.Value;
+                AWGVisaType = AWGVisa.type;
+                AWGVisaAddr = AWGVisa.addr;
+            else
+                AWGVisaType = '';
+                AWGVisaAddr = '';
+            end
             
             M = str2num(app.MQAMDropDown.Value);
             Fsym = app.SymbolRatesymssecEditField.Value;
@@ -164,11 +170,17 @@ classdef mqamApp < matlab.apps.AppBase
 
         % Value changed function: ReadButton
         function ReadButtonValueChanged(app, event)
-           
+            global SIM_MODE
+            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
                         
-            DSOVisa = app.ScopeDropDown.Value;
-            DSOVisaType = DSOVisa.type;
-            DSOVisaAddr = DSOVisa.addr;
+            if ~SIM_MODE
+                DSOVisa = app.ScopeDropDown.Value;
+                DSOVisaType = DSOVisa.type;
+                DSOVisaAddr = DSOVisa.addr;
+            else
+                DSOVisaType = '';
+                DSOVisaAddr = '';
+            end
             
             M = str2num(app.MQAMDropDown.Value);
             Fsym = app.SymbolRatesymssecEditField.Value;

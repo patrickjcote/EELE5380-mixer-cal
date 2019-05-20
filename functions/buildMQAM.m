@@ -4,6 +4,11 @@ function [] = buildMQAM(M,Fsym,N_syms,rng_seed,TX_CAL,filtType,instrumentType,in
 % EELE 5380 - Adv. Signals and Systems
 % Build ARB files for M-QAM system with random data and Tx calibration
 
+global SIM_MODE
+if isempty(SIM_MODE)
+    SIM_MODE = 0;
+end
+
 %% Instrument Type
 % Default to Keysight 33500 awg
 if ~exist('instrumentType','var')
@@ -51,6 +56,23 @@ else
     fname = 'uncal';
 end
 
+if SIM_MODE
+    % If simulation mode, save waveforms as .MAT file
+    dirpath = uigetdir('Signal Files','Select Save Location for M-QAM Tx Simulation File');
+    if ~dirpath
+        error('Build M-QAM Files Operation Cancled by User');
+    end
+    
+    Irx = [Itx;Itx;Itx];
+    Qrx = [Qtx;Qtx;Qtx];
+    tq = (0:length(Irx)-1)'/(sps*Fsym);
+    fileName = [dirpath,'\',num2str(M),'Q_i_',fname];
+    save(fileName,'Irx','Qrx','tq');
+    
+    return
+end
+    
+
 %% Try to Write Files To ARB
 Fsamp = sps*Fsym; % Wavegen Sample Rate
 Vpp = 1;    % ARB Output Peak-Peak Voltage
@@ -71,42 +93,18 @@ if WRITE_TO_DISK
         'Insert Storage Device', ...
         'Ok','Ok');
 
-    dirpath = uigetdir('ARB Files','Select Save Location for ARB Files');
+    dirpath = uigetdir('ARB Files','Select Save Location for M-QAM Tx ARB Files');
     if ~dirpath
         error('Build M-QAM Tx Files Operation Cancled by User');
     end
     
-    dirpath = uigetdir('ARB Files','Select Save Location for M-QAM Tx ARB Files');
-if ~dirpath
-    dirpath = pwd;
+    % Build AWG Files
+    writeArbFile([dirpath,'\',num2str(M),'Q_i_',fname],Itx,Fsamp);
+    writeArbFile([dirpath,'\',num2str(M),'Q_q_',fname],Qtx,Fsamp);
+    disp('ARB build complete...');
+    t = length(Itx)/Fsamp;
+    fprintf('Frame Length: %.3f seconds\n',t)
 end
-
-% Build AWG Files
-writeArbFile([dirpath,'\',num2str(M),'Q_i_',fname],Itx,Fsamp);
-writeArbFile([dirpath,'\',num2str(M),'Q_q_',fname],Qtx,Fsamp);
-disp('ARB build complete...');
-t = length(Itx)/Fsamp;
-fprintf('Frame Length: %.3f seconds\n',t)
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 end
 
