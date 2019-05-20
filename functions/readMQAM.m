@@ -13,16 +13,18 @@ end
 %% Read DSO and Calc IQ Correction Matrix
 % % Read in data
 if ~SIM_MODE
-    answer = questdlg('Data Source: ', ...
-        'Data Source', ...
-        'Read DSO','Load .mat File','Read DSO');
-    % Handle response
-    switch answer
-        case 'Read DSO'
-            READ_DSO = 1;
-        case 'Load .mat File'
-            READ_DSO = 0;
-    end
+%     answer = questdlg('Data Source: ', ...
+%         'Data Source', ...
+%         'Read DSO','Load .mat File','Read DSO');
+%     % Handle response
+%     switch answer
+%         case 'Read DSO'
+%             READ_DSO = 1;
+%         case 'Load .mat File'
+%             READ_DSO = 0;
+%     end
+
+    READ_DSO = 1;
 else
     READ_DSO = 0;
 end

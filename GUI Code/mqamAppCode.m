@@ -149,7 +149,7 @@ classdef mqamApp < matlab.apps.AppBase
             end
             
             try
-                buildMQAM(M,Fsym,N_syms,rng_seed,TX_CAL,AWGVisaType,AWGVisaAddr);
+                buildMQAM(M,Fsym,N_syms,rng_seed,TX_CAL,2,AWGVisaType,AWGVisaAddr);
                 app.Status.FontColor = [0.47 0.67 0.19];
                 app.Status.Text = 'Send Successful.';
             catch ME

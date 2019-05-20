@@ -15,9 +15,9 @@ if ~exist('instrumentType','var')
     % Default instrument type is KEYSIGHT
     instrumentType = 'KEYSIGHT';
 end
-if ~exist('intrumentAddress','var')
+if ~exist('instrumentAddress','var')
     % Default addresss
-    intrumentAddress = 'USB0::0x0957::0x2C07::MY52801516::0::INSTR';
+    instrumentAddress = 'USB0::0x0957::0x2C07::MY52801516::0::INSTR';
 end
 
 % Set Instrument type if variable is numeric
