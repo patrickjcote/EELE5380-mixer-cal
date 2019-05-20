@@ -22,6 +22,14 @@ classdef mqamApp < matlab.apps.AppBase
         ApplyRxCalibrationSwitchLabel  matlab.ui.control.Label
         ApplyRxCalibrationSwitch       matlab.ui.control.ToggleSwitch
         Status                         matlab.ui.control.Label
+        ChannelCodingButtonGroup       matlab.ui.container.ButtonGroup
+        NoneButton                     matlab.ui.control.RadioButton
+        ConvolutionalButton            matlab.ui.control.RadioButton
+        LDPCButton                     matlab.ui.control.RadioButton
+        RateDropDown                   matlab.ui.control.DropDown
+        RateDropDownLabel              matlab.ui.control.Label
+        LDPCBlockLengthDropDownLabel   matlab.ui.control.Label
+        LDPCBlockLengthDropDown        matlab.ui.control.DropDown
         DeviceSettingsTab              matlab.ui.container.Tab
         ScopeDropDownLabel             matlab.ui.control.Label
         ScopeDropDown                  matlab.ui.control.DropDown
@@ -47,9 +55,9 @@ classdef mqamApp < matlab.apps.AppBase
             % Force a redraw of GUI
             drawnow
             
-            % Find Devices          
+            % Find Devices
             devices = scanVISA();
-%           load('Data Files\scanVisaOutput3.mat','devices');
+            %           load('Data Files\scanVisaOutput3.mat','devices');
             
             if ~iscell(devices)
                 % Devices structure is empty, load Items
@@ -60,8 +68,8 @@ classdef mqamApp < matlab.apps.AppBase
                 % Set status lamp color
                 app.RefreshLamp.Color = 'Red';
                 % Disable Calibration Function Buttons
-%                 app.SendButton.Enable = 0;
-%                 app.ReadButton.Enable = 0;
+                %                 app.SendButton.Enable = 0;
+                %                 app.ReadButton.Enable = 0;
                 app.Status.Text = 'No Devices Available.';
                 app.Status.FontColor = [0.64 0.08 0.18];
                 % Sound
@@ -115,7 +123,13 @@ classdef mqamApp < matlab.apps.AppBase
 
         % Code that executes after component creation
         function startupFcn(app)
-           addpath('functions\');
+            addpath('functions\');
+            
+            % Initialize Channel Coding
+            app.RateDropDown.Visible = 0;
+            app.RateDropDownLabel.Visible = 0;
+            app.LDPCBlockLengthDropDown.Visible = 0;
+            app.LDPCBlockLengthDropDownLabel.Visible = 0;
             
             % Set Lamp
             app.RefreshLamp.Color = 'Yellow';
@@ -172,7 +186,7 @@ classdef mqamApp < matlab.apps.AppBase
         function ReadButtonValueChanged(app, event)
             global SIM_MODE
             SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
-                        
+            
             if ~SIM_MODE
                 DSOVisa = app.ScopeDropDown.Value;
                 DSOVisaType = DSOVisa.type;
@@ -218,7 +232,7 @@ classdef mqamApp < matlab.apps.AppBase
             SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
             
             if SIM_MODE
-            % Enable Calibration Function Buttons
+                % Enable Calibration Function Buttons
                 app.SendButton.Enable = 1;
                 app.ReadButton.Enable = 1;
                 app.Status.FontColor = [0.47 0.67 0.19];
@@ -226,6 +240,36 @@ classdef mqamApp < matlab.apps.AppBase
             else
                 refreshDevices(app);
             end
+        end
+
+        % Selection changed function: ChannelCodingButtonGroup
+        function ChannelCodingButtonGroupSelectionChanged(app, event)
+            selectedButton = app.ChannelCodingButtonGroup.SelectedObject;
+            
+            switch selectedButton.Text
+                case 'None'
+                    app.RateDropDown.Visible = 0;
+                    app.RateDropDownLabel.Visible = 0;
+                    app.LDPCBlockLengthDropDown.Visible = 0;
+                    app.LDPCBlockLengthDropDownLabel.Visible = 0;
+                    app.FrameLengthsymbolsEditField.Enable = 1;
+                case 'Convolutional'
+                    app.RateDropDown.Visible = 1;
+                    app.RateDropDownLabel.Visible = 1;
+                    app.LDPCBlockLengthDropDown.Visible = 0;
+                    app.LDPCBlockLengthDropDownLabel.Visible = 0;
+                    app.FrameLengthsymbolsEditField.Enable = 1;
+                case 'LDPC'
+                    app.RateDropDown.Visible = 1;
+                    app.RateDropDownLabel.Visible = 1;
+                    app.LDPCBlockLengthDropDown.Visible = 1;
+                    app.LDPCBlockLengthDropDownLabel.Visible = 1;
+                    app.FrameLengthsymbolsEditField.Enable = 0;
+                otherwise
+                    app.RateDropDown.Visible = 0;
+                    app.LDPCBlockLengthDropDown.Visible = 0;
+            end
+            
         end
     end
 
@@ -237,13 +281,13 @@ classdef mqamApp < matlab.apps.AppBase
 
             % Create MQAMSystemv05UIFigure
             app.MQAMSystemv05UIFigure = uifigure;
-            app.MQAMSystemv05UIFigure.Position = [100 100 396 379];
+            app.MQAMSystemv05UIFigure.Position = [100 100 396 493];
             app.MQAMSystemv05UIFigure.Name = 'M-QAM System - v0.5';
             app.MQAMSystemv05UIFigure.Resize = 'off';
 
             % Create TabGroup
             app.TabGroup = uitabgroup(app.MQAMSystemv05UIFigure);
-            app.TabGroup.Position = [1 1 397 379];
+            app.TabGroup.Position = [1 1 397 493];
 
             % Create MQAMTab
             app.MQAMTab = uitab(app.TabGroup);
@@ -251,30 +295,30 @@ classdef mqamApp < matlab.apps.AppBase
 
             % Create TotalFrameLengthLabel
             app.TotalFrameLengthLabel = uilabel(app.MQAMTab);
-            app.TotalFrameLengthLabel.Position = [60 207 112 22];
+            app.TotalFrameLengthLabel.Position = [60 321 112 22];
             app.TotalFrameLengthLabel.Text = 'Total Frame Length:';
 
             % Create secondsLabel
             app.secondsLabel = uilabel(app.MQAMTab);
             app.secondsLabel.HorizontalAlignment = 'right';
-            app.secondsLabel.Position = [238 207 100 22];
+            app.secondsLabel.Position = [238 321 100 22];
             app.secondsLabel.Text = '2 seconds';
 
             % Create SendButton
             app.SendButton = uibutton(app.MQAMTab, 'state');
             app.SendButton.ValueChangedFcn = createCallbackFcn(app, @SendButtonValueChanged, true);
             app.SendButton.Text = 'Send';
-            app.SendButton.Position = [66 49 100 22];
+            app.SendButton.Position = [67 51 100 22];
 
             % Create ReadButton
             app.ReadButton = uibutton(app.MQAMTab, 'state');
             app.ReadButton.ValueChangedFcn = createCallbackFcn(app, @ReadButtonValueChanged, true);
             app.ReadButton.Text = 'Read';
-            app.ReadButton.Position = [238 49 100 22];
+            app.ReadButton.Position = [238 51 100 22];
 
             % Create MQAMDropDownLabel
             app.MQAMDropDownLabel = uilabel(app.MQAMTab);
-            app.MQAMDropDownLabel.Position = [60 307 47 22];
+            app.MQAMDropDownLabel.Position = [60 421 47 22];
             app.MQAMDropDownLabel.Text = 'M-QAM';
 
             % Create MQAMDropDown
@@ -282,68 +326,116 @@ classdef mqamApp < matlab.apps.AppBase
             app.MQAMDropDown.Items = {'4', '16', '32', '64', '128', '256', '512', '1024'};
             app.MQAMDropDown.Editable = 'on';
             app.MQAMDropDown.BackgroundColor = [1 1 1];
-            app.MQAMDropDown.Position = [194 307 144 22];
+            app.MQAMDropDown.Position = [194 421 144 22];
             app.MQAMDropDown.Value = '4';
 
             % Create FrameLengthsymbolsEditFieldLabel
             app.FrameLengthsymbolsEditFieldLabel = uilabel(app.MQAMTab);
-            app.FrameLengthsymbolsEditFieldLabel.Position = [60 238 136 22];
+            app.FrameLengthsymbolsEditFieldLabel.Position = [60 352 136 22];
             app.FrameLengthsymbolsEditFieldLabel.Text = 'Frame Length (symbols)';
 
             % Create FrameLengthsymbolsEditField
             app.FrameLengthsymbolsEditField = uieditfield(app.MQAMTab, 'numeric');
-            app.FrameLengthsymbolsEditField.Position = [238 238 100 22];
+            app.FrameLengthsymbolsEditField.Position = [238 352 100 22];
             app.FrameLengthsymbolsEditField.Value = 2000;
 
             % Create RandomSeedEditFieldLabel
             app.RandomSeedEditFieldLabel = uilabel(app.MQAMTab);
-            app.RandomSeedEditFieldLabel.Position = [58 173 82 22];
+            app.RandomSeedEditFieldLabel.Position = [58 287 82 22];
             app.RandomSeedEditFieldLabel.Text = 'Random Seed';
 
             % Create RandomSeedEditField
             app.RandomSeedEditField = uieditfield(app.MQAMTab, 'numeric');
-            app.RandomSeedEditField.Position = [238 173 100 22];
+            app.RandomSeedEditField.Position = [238 287 100 22];
             app.RandomSeedEditField.Value = 2369;
 
             % Create SymbolRatesymssecEditFieldLabel
             app.SymbolRatesymssecEditFieldLabel = uilabel(app.MQAMTab);
-            app.SymbolRatesymssecEditFieldLabel.Position = [60 271 136 22];
+            app.SymbolRatesymssecEditFieldLabel.Position = [60 385 136 22];
             app.SymbolRatesymssecEditFieldLabel.Text = 'Symbol Rate (syms/sec)';
 
             % Create SymbolRatesymssecEditField
             app.SymbolRatesymssecEditField = uieditfield(app.MQAMTab, 'numeric');
-            app.SymbolRatesymssecEditField.Position = [238 271 100 22];
+            app.SymbolRatesymssecEditField.Position = [238 385 100 22];
             app.SymbolRatesymssecEditField.Value = 1000;
 
             % Create ApplyTxCalibrationSwitchLabel
             app.ApplyTxCalibrationSwitchLabel = uilabel(app.MQAMTab);
             app.ApplyTxCalibrationSwitchLabel.HorizontalAlignment = 'center';
-            app.ApplyTxCalibrationSwitchLabel.Position = [60 133 113 22];
+            app.ApplyTxCalibrationSwitchLabel.Position = [60 247 113 22];
             app.ApplyTxCalibrationSwitchLabel.Text = 'Apply Tx Calibration';
 
             % Create ApplyTxCalibrationSwitch
             app.ApplyTxCalibrationSwitch = uiswitch(app.MQAMTab, 'toggle');
             app.ApplyTxCalibrationSwitch.Orientation = 'horizontal';
-            app.ApplyTxCalibrationSwitch.Position = [99 109 38 16];
+            app.ApplyTxCalibrationSwitch.Position = [99 223 38 16];
             app.ApplyTxCalibrationSwitch.Value = 'On';
 
             % Create ApplyRxCalibrationSwitchLabel
             app.ApplyRxCalibrationSwitchLabel = uilabel(app.MQAMTab);
             app.ApplyRxCalibrationSwitchLabel.HorizontalAlignment = 'center';
-            app.ApplyRxCalibrationSwitchLabel.Position = [228 133 118 22];
+            app.ApplyRxCalibrationSwitchLabel.Position = [228 247 118 22];
             app.ApplyRxCalibrationSwitchLabel.Text = ' Apply Rx Calibration';
 
             % Create ApplyRxCalibrationSwitch
             app.ApplyRxCalibrationSwitch = uiswitch(app.MQAMTab, 'toggle');
             app.ApplyRxCalibrationSwitch.Orientation = 'horizontal';
-            app.ApplyRxCalibrationSwitch.Position = [268 110 38 16];
+            app.ApplyRxCalibrationSwitch.Position = [268 224 38 16];
             app.ApplyRxCalibrationSwitch.Value = 'On';
 
             % Create Status
             app.Status = uilabel(app.MQAMTab);
             app.Status.HorizontalAlignment = 'center';
-            app.Status.Position = [48 15 302 22];
+            app.Status.Position = [48 17 302 22];
             app.Status.Text = '';
+
+            % Create ChannelCodingButtonGroup
+            app.ChannelCodingButtonGroup = uibuttongroup(app.MQAMTab);
+            app.ChannelCodingButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @ChannelCodingButtonGroupSelectionChanged, true);
+            app.ChannelCodingButtonGroup.Title = 'Channel Coding';
+            app.ChannelCodingButtonGroup.Position = [30 90 338 106];
+
+            % Create NoneButton
+            app.NoneButton = uiradiobutton(app.ChannelCodingButtonGroup);
+            app.NoneButton.Text = 'None';
+            app.NoneButton.Position = [11 60 58 22];
+            app.NoneButton.Value = true;
+
+            % Create ConvolutionalButton
+            app.ConvolutionalButton = uiradiobutton(app.ChannelCodingButtonGroup);
+            app.ConvolutionalButton.Text = 'Convolutional';
+            app.ConvolutionalButton.Position = [11 38 95 22];
+
+            % Create LDPCButton
+            app.LDPCButton = uiradiobutton(app.ChannelCodingButtonGroup);
+            app.LDPCButton.Text = 'LDPC';
+            app.LDPCButton.Position = [11 16 65 22];
+
+            % Create RateDropDown
+            app.RateDropDown = uidropdown(app.ChannelCodingButtonGroup);
+            app.RateDropDown.Items = {'1/2', '2/3', '3/4', '5/6'};
+            app.RateDropDown.ItemsData = {'1', '2', '3', '4'};
+            app.RateDropDown.Position = [226 59 100 22];
+            app.RateDropDown.Value = '1';
+
+            % Create LDPCBlockLengthDropDown
+            app.LDPCBlockLengthDropDown = uidropdown(app.ChannelCodingButtonGroup);
+            app.LDPCBlockLengthDropDown.Items = {'648', '1296', '1944'};
+            app.LDPCBlockLengthDropDown.ItemsData = {'1', '2', '3'};
+            app.LDPCBlockLengthDropDown.Position = [226 17 100 22];
+            app.LDPCBlockLengthDropDown.Value = '1';
+
+            % Create LDPCBlockLengthDropDownLabel
+            app.LDPCBlockLengthDropDownLabel = uilabel(app.ChannelCodingButtonGroup);
+            app.LDPCBlockLengthDropDownLabel.HorizontalAlignment = 'right';
+            app.LDPCBlockLengthDropDownLabel.Position = [142 16 75 22];
+            app.LDPCBlockLengthDropDownLabel.Text = 'Block Length';
+
+            % Create RateDropDownLabel
+            app.RateDropDownLabel = uilabel(app.ChannelCodingButtonGroup);
+            app.RateDropDownLabel.HorizontalAlignment = 'right';
+            app.RateDropDownLabel.Position = [180 59 31 22];
+            app.RateDropDownLabel.Text = 'Rate';
 
             % Create DeviceSettingsTab
             app.DeviceSettingsTab = uitab(app.TabGroup);
@@ -351,41 +443,41 @@ classdef mqamApp < matlab.apps.AppBase
 
             % Create ScopeDropDownLabel
             app.ScopeDropDownLabel = uilabel(app.DeviceSettingsTab);
-            app.ScopeDropDownLabel.Position = [19 276 43 22];
+            app.ScopeDropDownLabel.Position = [19 390 43 22];
             app.ScopeDropDownLabel.Text = 'Scope:';
 
             % Create ScopeDropDown
             app.ScopeDropDown = uidropdown(app.DeviceSettingsTab);
             app.ScopeDropDown.Items = {};
-            app.ScopeDropDown.Position = [77 276 304 22];
+            app.ScopeDropDown.Position = [77 390 304 22];
             app.ScopeDropDown.Value = {};
 
             % Create AWGDropDownLabel
             app.AWGDropDownLabel = uilabel(app.DeviceSettingsTab);
-            app.AWGDropDownLabel.Position = [19 195 34 22];
+            app.AWGDropDownLabel.Position = [19 309 34 22];
             app.AWGDropDownLabel.Text = 'AWG:';
 
             % Create AWGDropDown
             app.AWGDropDown = uidropdown(app.DeviceSettingsTab);
             app.AWGDropDown.Items = {};
-            app.AWGDropDown.Position = [77 195 304 22];
+            app.AWGDropDown.Position = [77 309 304 22];
             app.AWGDropDown.Value = {};
 
             % Create RefreshDeviceListButton
             app.RefreshDeviceListButton = uibutton(app.DeviceSettingsTab, 'push');
             app.RefreshDeviceListButton.ButtonPushedFcn = createCallbackFcn(app, @RefreshDeviceListButtonPushed, true);
-            app.RefreshDeviceListButton.Position = [138 55 120 22];
+            app.RefreshDeviceListButton.Position = [138 51 120 22];
             app.RefreshDeviceListButton.Text = 'Refresh Device List';
 
             % Create RefreshLamp
             app.RefreshLamp = uilamp(app.DeviceSettingsTab);
-            app.RefreshLamp.Position = [361 56 20 20];
+            app.RefreshLamp.Position = [361 52 20 20];
 
             % Create EnableSimulatorModeCheckBox
             app.EnableSimulatorModeCheckBox = uicheckbox(app.DeviceSettingsTab);
             app.EnableSimulatorModeCheckBox.ValueChangedFcn = createCallbackFcn(app, @EnableSimulatorModeCheckBoxValueChanged, true);
             app.EnableSimulatorModeCheckBox.Text = 'Enable Simulator Mode';
-            app.EnableSimulatorModeCheckBox.Position = [126 16 147 22];
+            app.EnableSimulatorModeCheckBox.Position = [126 12 147 22];
         end
     end
 
