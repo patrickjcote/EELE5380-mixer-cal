@@ -3,7 +3,7 @@
 % EELE 5380 - Adv Signals
 % Calculate Rx calibration matrix from USB or LSB tone
 %   test correction with ideal upconversion
-
+%TODO: Convert readRx_sb_calcd.m into a function, add ARB control, and integrate into GUI
 close all; clc;
 addpath('functions\');
 
