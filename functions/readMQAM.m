@@ -1,9 +1,19 @@
-function [rxBits,rxLLRs] = readMQAM(M,Fsym,N_syms,TXdataBlock,RX_CAL,VISAtype,VISAaddr)
-% read_MQAM.m
+function [] = readMQAM(txObj,VISAtype,VISAaddr)
+%% read_MQAM.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv Signals
 % Read in M-QAM sequence with random data
 
+try
+    M = txObj.M;
+    Fsym = txObj.Fsym;
+    N_syms = txObj.Nsyms;
+    TXdataBlock = txObj.data;
+    RX_CAL = txObj.rxCal;
+    CODING = txObj.coding;
+catch
+    error('Tx Object not properly initialized.');
+end
 
 global SIM_MODE
 if isempty(SIM_MODE)
@@ -96,10 +106,16 @@ noiseRx = symsRx - syncSyms;
 SNR = 10*log10(mean(abs(syncSyms).^2)/mean(abs(noiseRx).^2))
 
 %% Demod
+if ~CODING
 rxBits = qamdemod(symsRx,M,'gray','OutputType','bit','UnitAveragePower',true);
-
+else
 rxLLRs = qamdemod(symsRx,M,'gray','OutputType','llr','UnitAveragePower',true);
 
-
+if CODING == 1
+    % conv decode
+elseif CODING == 2
+    % LDPC decode
 end
 
+end
+%% BER 

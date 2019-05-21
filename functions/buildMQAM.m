@@ -1,8 +1,26 @@
-function [] = buildMQAM(M,Fsym,dataBlock,TX_CAL,filtType,instrumentType,instrumentAddress)
+function [] = buildMQAM(txObj,filtType,instrumentType,instrumentAddress)
 % buildMQAM.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
 % Build ARB files for M-QAM system with random data and Tx calibration
+
+%             txObj.Fsym = app.SymbolRatesymssecEditField.Value;
+%             txObj.Nsyms = app.FrameLengthsymbolsEditField.Value;
+%             txObj.data = buildDataBlock(app);
+%             txObj.txCal = TX_CAL;
+%             txObj.M = str2num(app.MQAMDropDown.Value);
+
+try
+    M = txObj.M;
+    Fsym = txObj.Fsym;
+    dataBlock = txObj.data;
+    TX_CAL = txObj.txCal;
+catch
+    error('Tx Object not properly initialized.');
+end
+
+
+
 
 global SIM_MODE
 if isempty(SIM_MODE)
@@ -34,7 +52,6 @@ end
 
 
 sps = 50;           % Samples per Symbol        [Samp/sym]
-
 
 %% Build Data Block and Modulate
 
@@ -70,7 +87,6 @@ if SIM_MODE
     
     return
 end
-    
 
 %% Try to Write Files To ARB
 Fsamp = sps*Fsym; % Wavegen Sample Rate
@@ -78,7 +94,7 @@ Vpp = 1;    % ARB Output Peak-Peak Voltage
 try
     WRITE_TO_DISK = 0;
 	sendARB([Itx, Qtx], Vpp, Fsamp, filtType, instrumentType, instrumentAddress);
-catch
+catch 
     warning('Failed sending signals to the AWG...');
     WRITE_TO_DISK = 1;
 end
