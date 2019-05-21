@@ -75,9 +75,10 @@ if SIM_MODE
     if ~dirpath
         error('Build M-QAM Files Operation Cancled by User');
     end
+    N = round(length(Itx)/4);
     
-    Irx = [Itx;Itx;Itx];
-    Qrx = [Qtx;Qtx;Qtx];
+    Irx = [awgn(zeros(N,1),10);Itx;Itx];
+    Qrx = [awgn(zeros(N,1),10);Qtx;Qtx];
     tq = (0:length(Irx)-1)'/(sps*Fsym);
     fileName = [dirpath,'\',num2str(M),'Q_i_',fname];
     save(fileName,'Irx','Qrx','tq');
