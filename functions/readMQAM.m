@@ -143,6 +143,14 @@ mBox.Message = {'\fontsize{20}';
 msgbox(mBox.Message,'Results',mBox);
 clear mBox
 
-%% PLot
-% TODO: add plot of rx and bit error symbols.
-scatterplot(symsRx); grid on; grid minor;
+%% Plot
+figure;
+
+errs = rxBits ~= txBits;
+ndx = ceil(find(errs==1)/log2(M));
+plot(real(symsRx),imag(symsRx),'.',real(symsRx(ndx)),imag(symsRx(ndx)),'r.')
+pbaspect([1 1 1]);
+axis([-1.5 1.5 -1.5 1.5]*max(abs(symsRx)));
+xlabel('I');ylabel('Q');
+title('Received Constellation');
+grid on; grid minor;
