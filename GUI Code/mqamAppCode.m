@@ -127,12 +127,29 @@ classdef mqamApp < matlab.apps.AppBase
                 case 'None' % No channel coding
                     rng(rng_seed);          % Random Seed
                     dataBits = randi([0 1],log2(M)*N_syms,1);
+                    encBlock = dataBits;
                 case 'Convolutional'
                     % Convolutional Coding
-                    rng(rng_seed);          % Random Seed
-                    dataBits = randi([0 1],log2(M)*N_syms,1);
+                    % Load Rate
                     rate = str2num(app.RateDropDown.Value);
+
+                    switch rate
+                        case 3
+                            r = 3/4;
+                        case 2
+                            r = 2/3;
+                        case 4
+                            r = 5/6;
+                        otherwise
+                            r = 1/2;
+                    end
+                    
+                    NdataBits = log2(M)*N_syms;
+                    rng(rng_seed);          % Random Seed
+                    dataBits = randi([0 1],NdataBits,1);
                     encBlock = convEncode(dataBits,rate);
+
+                        
                 case 'LDPC'
                     blockLen = str2num(app.LDPCBlockLengthDropDown.Value);
                     rate = str2num(app.RateDropDown.Value);
@@ -140,6 +157,7 @@ classdef mqamApp < matlab.apps.AppBase
                 otherwise
                     rng(rng_seed);          % Random Seed
                     dataBits = randi([0 1],log2(M)*N_syms,1);
+                    encBlock = dataBits;
             end
             
         end
@@ -210,7 +228,17 @@ classdef mqamApp < matlab.apps.AppBase
             txObj.Fsym = app.SymbolRatesymssecEditField.Value;
             txObj.Nsyms = app.FrameLengthsymbolsEditField.Value;
             
-            [encBlock, dataBits] = buildencBlock(app);
+            try
+                [encBlock, dataBits] = buildencBlock(app);
+            catch ME
+                warning('Error Running buildencBlock');
+                warning(ME.message);
+                app.Status.Text = 'An Error Occured. Check Command Window for details.';
+                app.Status.FontColor = [0.64 0.08 0.18];
+                return
+            end
+            
+            
             txObj.encBits = encBlock;
             txObj.dataBits = dataBits;
             txObj.txCal = TX_CAL;
@@ -223,8 +251,9 @@ classdef mqamApp < matlab.apps.AppBase
             catch ME
                 warning('Error Running buildMQAM');
                 warning(ME.message);
-                app.Status.Text = 'An Error Occured';
+                app.Status.Text = 'An Error Occured. Check Command Window for details.';
                 app.Status.FontColor = [0.64 0.08 0.18];
+                
             end
             
             % Unpress send button
@@ -260,11 +289,15 @@ classdef mqamApp < matlab.apps.AppBase
             % Load Tx Object
             txObj.Fsym = app.SymbolRatesymssecEditField.Value;
             txObj.Nsyms = app.FrameLengthsymbolsEditField.Value;
-            txObj.data = buildencBlock(app);
             txObj.rxCal = RX_CAL;
             txObj.M = str2num(app.MQAMDropDown.Value);
             
+            [encBlock, dataBits] = buildencBlock(app);
+            txObj.encBits = encBlock;
+            txObj.dataBits = dataBits;
+            
             % Load Coding Scheme into Tx Object
+            selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
             switch selectedButton.Text
                 case 'None' % No channel coding
                     txObj.coding = 0;
@@ -285,7 +318,7 @@ classdef mqamApp < matlab.apps.AppBase
                     catch ME
                         warning('Error Running readMQAM');
                         warning(ME.message);
-                        app.Status.Text = 'An Error Occured';
+                        app.Status.Text = 'An Error Occured. Check Command Window for details.';
                         app.Status.FontColor = [0.64 0.08 0.18];
                     end
                     
