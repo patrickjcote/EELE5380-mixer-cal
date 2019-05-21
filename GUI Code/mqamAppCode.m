@@ -115,7 +115,7 @@ classdef mqamApp < matlab.apps.AppBase
             
         end
         
-        function dataBlock = buildDataBlock(app)
+        function [encBlock, dataBits] = buildencBlock(app)
             
             selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
             
@@ -126,20 +126,20 @@ classdef mqamApp < matlab.apps.AppBase
             switch selectedButton.Text
                 case 'None' % No channel coding
                     rng(rng_seed);          % Random Seed
-                    dataBlock = randi([0 1],log2(M)*N_syms,1);
+                    dataBits = randi([0 1],log2(M)*N_syms,1);
                 case 'Convolutional'
                     % Convolutional Coding
                     rng(rng_seed);          % Random Seed
-                    dataBlock = randi([0 1],log2(M)*N_syms,1);
+                    dataBits = randi([0 1],log2(M)*N_syms,1);
                     rate = str2num(app.RateDropDown.Value);
-                    dataBlock = convEncode(dataBlock,rate);
+                    encBlock = convEncode(dataBits,rate);
                 case 'LDPC'
                     blockLen = str2num(app.LDPCBlockLengthDropDown.Value);
                     rate = str2num(app.RateDropDown.Value);
-                    dataBlock = ldpcEncode(blockLen,rate,rng_seed);
+                    [encBlock, dataBits] = ldpcEncode(blockLen,rate,rng_seed);
                 otherwise
                     rng(rng_seed);          % Random Seed
-                    dataBlock = randi([0 1],log2(M)*N_syms,1);
+                    dataBits = randi([0 1],log2(M)*N_syms,1);
             end
             
         end
@@ -209,7 +209,10 @@ classdef mqamApp < matlab.apps.AppBase
             % Load Tx Object
             txObj.Fsym = app.SymbolRatesymssecEditField.Value;
             txObj.Nsyms = app.FrameLengthsymbolsEditField.Value;
-            txObj.data = buildDataBlock(app);
+            
+            [encBlock, dataBits] = buildencBlock(app);
+            txObj.encBits = encBlock;
+            txObj.dataBits = dataBits;
             txObj.txCal = TX_CAL;
             txObj.M = str2num(app.MQAMDropDown.Value);
             
@@ -257,7 +260,7 @@ classdef mqamApp < matlab.apps.AppBase
             % Load Tx Object
             txObj.Fsym = app.SymbolRatesymssecEditField.Value;
             txObj.Nsyms = app.FrameLengthsymbolsEditField.Value;
-            txObj.data = buildDataBlock(app);
+            txObj.data = buildencBlock(app);
             txObj.rxCal = RX_CAL;
             txObj.M = str2num(app.MQAMDropDown.Value);
             

@@ -13,14 +13,11 @@ function [] = buildMQAM(txObj,filtType,instrumentType,instrumentAddress)
 try
     M = txObj.M;
     Fsym = txObj.Fsym;
-    dataBlock = txObj.data;
+    txBlock = txObj.encBits;
     TX_CAL = txObj.txCal;
 catch
     error('Tx Object not properly initialized.');
 end
-
-
-
 
 global SIM_MODE
 if isempty(SIM_MODE)
@@ -55,7 +52,7 @@ sps = 50;           % Samples per Symbol        [Samp/sym]
 
 %% Build Data Block and Modulate
 
-modBlock  = qammod(dataBlock,M,'gray','InputType','bit','UnitAveragePower',true);
+modBlock  = qammod(txBlock,M,'gray','InputType','bit','UnitAveragePower',true);
 
 %% Build Output
 Qtx = rectpulse(imag(modBlock),sps);

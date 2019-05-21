@@ -8,7 +8,8 @@ try
     M = txObj.M;
     Fsym = txObj.Fsym;
     N_syms = txObj.Nsyms;
-    TXdataBlock = txObj.data;
+    TXdataBlock = txObj.encBits;
+    txBits = txObj.dataBits;
     RX_CAL = txObj.rxCal;
     CODING = txObj.coding;
 catch
@@ -115,7 +116,31 @@ if CODING == 1
     % conv decode
 elseif CODING == 2
     % LDPC decode
+    rxBits = ldpcDecode(rxLLRs,txObj.blockLen,txObj.rate);
 end
 
 end
 %% BER 
+
+bit_errors = sum( rxBits ~= txBits);
+totalBits = length(txBits);
+BER = bit_errors/totalBits;
+
+
+%% Report
+mBox.Interpreter = 'tex';
+mBox.WindowStyle = 'replace';
+mBox.Message = {'\fontsize{20}';
+    ['SNR:         ',num2str(SNR),' dB'];
+    ' ';
+    '\bfErrors:\rm\fontsize{15}';
+    ['     BER:    ',num2str(BER)];
+    ['     Errors:  ',num2str(bit_errors)];
+    ['     Bits:    ',num2str(totalBits)];
+    ' ';
+    };
+msgbox(mBox.Message,'Results',mBox);
+clear mBox
+
+%% PLot
+% TODO: add plot of rx and bit error symbols.
