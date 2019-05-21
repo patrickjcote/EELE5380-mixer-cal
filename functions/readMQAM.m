@@ -110,10 +110,11 @@ SNR = 10*log10(mean(abs(syncSyms).^2)/mean(abs(noiseRx).^2))
 if ~CODING
 rxBits = qamdemod(symsRx,M,'gray','OutputType','bit','UnitAveragePower',true);
 else
-rxLLRs = qamdemod(symsRx,M,'gray','OutputType','llr','UnitAveragePower',true);
+rxLLRs = qamdemod(symsRx,M,'gray','OutputType','approxllr','UnitAveragePower',true);
 
 if CODING == 1
     % conv decode
+    rxBits = convDecode(rxLLRs,rxObj.rate,length(txBits));
 elseif CODING == 2
     % LDPC decode
     rxBits = ldpcDecode(rxLLRs,rxObj.blockLen,rxObj.rate);

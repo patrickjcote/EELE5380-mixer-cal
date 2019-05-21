@@ -147,6 +147,8 @@ classdef mqamApp < matlab.apps.AppBase
                     NdataBits = log2(M)*N_syms;
                     rng(rng_seed);          % Random Seed
                     dataBits = randi([0 1],NdataBits,1);
+                    % Tail bits to flush the encoder
+                    dataBits(end-31:end) = zeros(32,1);
                     encBlock = convEncode(dataBits,rate);
 
                         
