@@ -131,6 +131,10 @@ classdef mqamApp < matlab.apps.AppBase
                     dataBlock = randi([0 1],log2(M)*N_syms,1);
                 case 'Convolutional'
                     % Convolutional Coding
+                    rng(rng_seed);          % Random Seed
+                    dataBlock = randi([0 1],log2(M)*N_syms,1);
+                    rate = str2num(app.RateDropDown.Value);
+                    dataBlock = convEncode(dataBlock,rate);
                 case 'LDPC'
                     blockLen = str2num(app.LDPCBlockLengthDropDown.Value);
                     rate = str2num(app.RateDropDown.Value);
