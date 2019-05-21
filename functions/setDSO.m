@@ -113,7 +113,7 @@ if mode == 2
     % Turn on 20M BW filter
     fprintf(visaObj,':CHANnel1:BWLimit 20M');
     % Set Vertical Scale 0.5 V/div
-    fprintf(visaObj,':CHANnel1:SCALe 0.5');
+    fprintf(visaObj,':CHANnel1:SCALe 1');
     % Turn on only Ch1
     fprintf(visaObj,':CHANnel1:DISP 1');
     fprintf(visaObj,':CHANnel2:DISP 0');
@@ -141,8 +141,8 @@ if mode == 3
     fprintf(visaObj,':CHANnel1:BWLimit 20M');
     fprintf(visaObj,':CHANnel2:BWLimit 20M');
     % Set Vertical Scale to 0.5 V/div
-    fprintf(visaObj,':CHANnel1:SCALe 0.5');
-    fprintf(visaObj,':CHANnel2:SCALe 0.5');
+    fprintf(visaObj,':CHANnel1:SCALe 1');
+    fprintf(visaObj,':CHANnel2:SCALe 1');
     % Turn on Ch1,Ch2, Turn off Ch3
     fprintf(visaObj,':CHANnel1:DISP 1');
     fprintf(visaObj,':CHANnel2:DISP 1');
@@ -166,8 +166,8 @@ if mode == 4
     fprintf(visaObj,':CHANnel1:BWLimit 20M');
     fprintf(visaObj,':CHANnel2:BWLimit 20M');
     % Adjust Vertical Scales: V/div
-    fprintf(visaObj,':CHANnel1:SCALe 0.5');
-    fprintf(visaObj,':CHANnel2:SCALe 0.5');
+    fprintf(visaObj,':CHANnel1:SCALe 1');
+    fprintf(visaObj,':CHANnel2:SCALe 1');
     % Turn on Ch 1,2,3
     fprintf(visaObj,':CHANnel1:DISP 1');
     fprintf(visaObj,':CHANnel2:DISP 1');

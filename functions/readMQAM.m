@@ -144,4 +144,4 @@ clear mBox
 
 %% PLot
 % TODO: add plot of rx and bit error symbols.
-scatterplot(symsRx);
+scatterplot(symsRx); grid on; grid minor;
