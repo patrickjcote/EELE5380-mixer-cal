@@ -1,17 +1,17 @@
-function [] = readMQAM(txObj,VISAtype,VISAaddr)
+function [] = readMQAM(rxObj,VISAtype,VISAaddr)
 %% read_MQAM.m
 % 2019 - Patrick Cote
 % EELE 5380 - Adv Signals
 % Read in M-QAM sequence with random data
 
 try
-    M = txObj.M;
-    Fsym = txObj.Fsym;
-    N_syms = txObj.Nsyms;
-    TXdataBlock = txObj.encBits;
-    txBits = txObj.dataBits;
-    RX_CAL = txObj.rxCal;
-    CODING = txObj.coding;
+    M = rxObj.M;
+    Fsym = rxObj.Fsym;
+    N_syms = rxObj.Nsyms;
+    TXdataBlock = rxObj.encBits;
+    txBits = rxObj.dataBits;
+    RX_CAL = rxObj.rxCal;
+    CODING = rxObj.coding;
 catch
     error('Tx Object not properly initialized.');
 end
@@ -116,7 +116,7 @@ if CODING == 1
     % conv decode
 elseif CODING == 2
     % LDPC decode
-    rxBits = ldpcDecode(rxLLRs,txObj.blockLen,txObj.rate);
+    rxBits = ldpcDecode(rxLLRs,rxObj.blockLen,rxObj.rate);
 end
 
 end
