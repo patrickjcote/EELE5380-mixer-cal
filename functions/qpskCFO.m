@@ -1,5 +1,5 @@
 function [fErr] = qpskCFO(Irx,Qrx,Fs)
-% frameSync.m
+%% frameSync.m
 %
 %   Calculate frequency offset of a QPSK signal using
 %   a power of 4 algorithm. Frequency spur near 0 Hz corresponds to
@@ -17,16 +17,19 @@ function [fErr] = qpskCFO(Irx,Qrx,Fs)
 %   EELE 5380 - Adv. Signals and Systems 
 
 
+    %% Power of 4
     x = (Irx+1i*Qrx).^4;
-    n = length(x);
-    X = fft(x);
     
+    %% FFT
+    n = length(x);
+    X = fft(x)/n;
+    % Build a Frequency Vector
     fVec = Fs*(-n/2:n/2-1)/n;
+    % Shift the FFT to be centered at zero, convert to dB
     PdB = 20*log10(fftshift(X));
     
+    %% Find the max power peak and calculate the frequency error
     [~,ndx] = max(PdB);
-
     fErr = -fVec(ndx)/4;
     
-
 end

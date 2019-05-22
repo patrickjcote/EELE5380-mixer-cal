@@ -1,8 +1,8 @@
 function [symsRx,sto,n0] = frameSync(Irx,Qrx,syncSyms,sps,frameLen)
-% frameSync.m
+%% frameSync.m
 %
 %   Synchronize to the start of a known sequence of symbols and determine
-%   the best sample timing offset. Return
+%   the best sample timing offset. Return complex sliced symbols.
 %
 %   INPUTS:
 %       Irx         Baseband I samples
@@ -50,9 +50,10 @@ function [symsRx,sto,n0] = frameSync(Irx,Qrx,syncSyms,sps,frameLen)
     end
     
     %% Phase Offset Correction
+    % Calculate an average phase offset from the known symbols
     phaseOFF = (angle(symsRx) - angle(syncSyms))*180/pi;
     phaseOffset = mean(wrapTo180(phaseOFF));
-
+    % De-rotate the received symbols
     symsRx = symsRx.*exp(-1i*phaseOffset*pi/180);
    
 

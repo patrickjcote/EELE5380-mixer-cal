@@ -1,58 +1,59 @@
-function [ V, t ] = readDSO( channel, reTrig, instrumentType, intrumentAddress )
+function [ V, t ] = readDSO( channel,reTrig,DSOVisaType,DSOVisaAddress )
 %% readDSO.m
-% 2019 - Patrick Cote
-% EELE 5380 - Adv. Signals and Systems
-
-% Function to read the Rigol Oscilloscope
-
+%
+% Function to read a Digital Storage Oscilloscope using VISA connection
+%
 % INPUTS:
 %       channel             DSO channel to be read
 %       reTrig              Single shot the DSO if true, otherwise just
 %                           read what ever is currently displayed
-%       instrumentType      VISA Instrument Type
+%       DSOVisaType         VISA Instrument Type
 %                           1       - NI
 %                           2       - Agilent
 %                           'xxxx'  - User Specified
 %                           Default - KEYSIGHT
-%       intrumentAddress    VISA Instrument Address, default Rigol DS4400
+%       DSOVisaAddress      VISA Instrument Address, default Rigol DS4400
 %
 % OUTPUTS:
 %       V           Read signal
 %       t           Time vector for read signal
+%
+% 2019 - Patrick Cote
+% EELE 5380 - Adv. Signals and Systems
 
 %% Parameters
 READ_TIMEOUT_PERIOD = 20;       % Timeout period for Trigger Read [seconds]
 
 %% Input Check
-if ~exist('instrumentType','var') 
-    % Default instrument type is KEYSIGHT
-    instrumentType = 'KEYSIGHT';
+if ~exist('DSOVisaType','var') 
+    % Default DSOVisa type is KEYSIGHT
+    DSOVisaType = 'KEYSIGHT';
 end
-if ~exist('intrumentAddress','var') 
+if ~exist('DSOVisaAddress','var') 
     % Default addresss
-    intrumentAddress = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
+    DSOVisaAddress = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
 end
 
 %% Set Instrument type if variable is numeric
-if isnumeric(instrumentType)
-    switch instrumentType
+if isnumeric(DSOVisaType)
+    switch DSOVisaType
         case 1
-            instrumentType = 'NI';
+            DSOVisaType = 'NI';
         case 2
-            instrumentType = 'Agilent';
+            DSOVisaType = 'Agilent';
         otherwise
-            instrumentType = 'KEYSIGHT';
+            DSOVisaType = 'KEYSIGHT';
     end
 end
 
-%% Interface configuration and instrument connection
+%% Interface configuration and DSOVisa connection
 % Find a VISA-USB object.
-visaObj = instrfind('Type', 'visa-usb', 'RsrcName', intrumentAddress, 'Tag', '');
+visaObj = instrfind('Type', 'visa-usb', 'RsrcName', DSOVisaAddress, 'Tag', '');
 
 % Create the VISA-USB object if it does not exist
 % otherwise use the object that was found.
 if isempty(visaObj)
-    visaObj = visa(instrumentType, intrumentAddress);
+    visaObj = visa(DSOVisaType, DSOVisaAddress);
 else
     fclose(visaObj);
     visaObj = visaObj(1);
@@ -67,6 +68,7 @@ visaObj.ByteOrder = 'littleEndian';
 % Open the connection
 fopen(visaObj);
 
+%% Setup DSO
 % If reTrig flag is set do a Single shot 
 if reTrig
     % Make sure the DSO is in run Mode
@@ -111,11 +113,12 @@ while ~operationComplete
 end
 % Get the data back as a WORD (i.e., INT16), other options are ASCII and BYTE
 fprintf(visaObj,':WAVEFORM:FORMAT WORD');
-% Set the byte order on the instrument as well
+% Set the byte order on the DSOVisa as well
 % fprintf(visaObj,':WAVEFORM:BYTEORDER LSBFirst');
 % Get the preamble block
 preambleBlock = query(visaObj,':WAVEFORM:PREAMBLE?');
 
+%% Read The Data
 % Now send commmand to read data
 fprintf(visaObj,':WAV:DATA?');
 % read back the BINBLOCK with the data in specified format and store it in
@@ -127,12 +130,10 @@ fclose(visaObj);
 
 
 %% Data processing: Post process the data retreived from the scope
-% Extract the X, Y data 
-
 % Maximum value storable in a INT16
 maxVal = 2^16;
 
-%  split the preambleBlock into individual pieces of info
+% split the preambleBlock into individual pieces of info
 preambleBlock = regexp(preambleBlock,',','split');
 
 % store all this information into a waveform structure for later use
@@ -155,11 +156,11 @@ waveform.Delay = ((waveform.Points/2 - waveform.XReference) * waveform.XIncremen
 waveform.XData = (waveform.XIncrement.*(1:length(waveform.RawData))) - waveform.XIncrement;
 waveform.YData = (waveform.YIncrement.*(waveform.RawData - waveform.YReference)) + waveform.YOrigin;
 
-% Save Output Variables
+%% Save Output Variables
 t = waveform.XData;
 V = waveform.YData;
 
-% Delete objects and clear them.
+%% Delete objects and clear them.
 delete(visaObj); clear visaObj;
 
 end

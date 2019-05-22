@@ -1,5 +1,5 @@
-function [fOff] = fineCFO(pilotSyms,symsRx,f)
-%fineCFO.m
+function [fOff] = fineCFO(pilotSyms,symsRx,Fsym)
+%% fineCFO.m
 %
 %   Calculate Carrier Frequency Offset by determining mean phase difference
 %   between symbols transitions
@@ -7,7 +7,7 @@ function [fOff] = fineCFO(pilotSyms,symsRx,f)
 %   INPUT:
 %       pilotSyms   known pilot symbols 
 %       symsRx      received symbols
-%       f           symbol rate
+%       Fsym        symbol rate
 %   OUTPUT:
 %       fOff        Frequency Offset
 %
@@ -22,6 +22,6 @@ function [fOff] = fineCFO(pilotSyms,symsRx,f)
     % Calculate average phase offset
     avgOffset = mean(wrapTo180(txAng - rxAng));
     % Convert average phase offset to a frequency offset
-    fOff = avgOffset*(f/360);
+    fOff = avgOffset*(Fsym/360);
 
 end

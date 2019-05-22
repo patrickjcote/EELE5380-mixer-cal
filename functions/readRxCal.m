@@ -1,8 +1,29 @@
 function readRxCal(DSOVisaType,DSOVisaAddr,AWGVisaType,AWGVisaAddr)
 %% readRxCal.m
+%	This function reads the baseband sine and cosine waves be played
+%	out of the I and Q channels of the AWG. The signals are predistorted
+%	using the Tx calibration matrix such that when upconverted
+%	a perfect, single sideband will be seen in the RF spectrum. A gain and
+%	phase offset is then calcuated and stored as a calibration matrix to be
+%	used for correcting any subsequently received signals. Calibration is
+%	tested by digitally upconverting the raw received data with and without
+%	the calibration applied. The upconverted signal with no calibration
+%	will display a side band image and some LO leakage. Proper calibration
+%	will result in significant image rejection and no LO leakage.
+%
+% INPUTS:
+%       AWG/DSOVisaType         VISA Instrument Type
+%                           1       - NI
+%                           2       - Agilent
+%                           'xxxx'  - User Specified
+%                           Default - KEYSIGHT
+%       AWG/DSOVisaAddress      VISA Instrument Address
+%
+% 2019 - Patrick Cote
+% EELE 5380 - Adv. Signals and Systems
 
 %% Check for VISA Addresses and Type, if none, set defaults
-
+% Default DSO to Rigol
 if ~exist('DSOVisaAddr','var')
     disp('Setting default DSO address');
     DSOVisaAddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
@@ -21,14 +42,6 @@ end
 if ~exist('AWGVisaAddr','var')
     % Default addresss
     AWGVisaAddr = 'USB0::0x0957::0x2C07::MY52801516::0::INSTR';
-end
-
-
-%% Add Functions Path
-try
-    addpath('functions\');
-catch
-    warning('Functions Path Not Found.');
 end
 
 %% Input Parameters
@@ -108,6 +121,7 @@ else
     end
 end
 
+% Calculate Sample Rate
 fs = 1/mean(diff(tq));
 
 %% LPF Filter

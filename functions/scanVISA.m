@@ -1,6 +1,7 @@
 function [devices] = scanVISA()
 %% scanVISA.m
-% Scan for VISA devices
+%
+% Scan for connected VISA devices
 %
 % INPUTS:
 %       none
@@ -92,7 +93,6 @@ end
 
 %% Reset Instrument Objects
 instrreset;     % clear all open objects
-
 
 end
 

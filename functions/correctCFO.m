@@ -1,5 +1,5 @@
-function [symsRxCor, fOff] = correctCFO(pilotSyms,symsRx,f)
-%correctCFO.m
+function [symsRxCor, fOff] = correctCFO(pilotSyms,symsRx,Fsym)
+%% correctCFO.m
 %
 %   Calculate Carrier Frequency Offset by determining mean phase difference
 %   between symbols transitions. Derotate each symbol
@@ -7,7 +7,7 @@ function [symsRxCor, fOff] = correctCFO(pilotSyms,symsRx,f)
 %   INPUT:
 %       pilotSyms   known pilot symbols 
 %       symsRx      received symbols
-%       f           symbol rate
+%       Fsym        symbol rate
 %   OUTPUT:
 %       fOff        Frequency Offset
 %
@@ -21,7 +21,7 @@ function [symsRxCor, fOff] = correctCFO(pilotSyms,symsRx,f)
     rxAng = diff(angle(symsRx(1:length(pilotSyms))))*180/pi;
     % Calculate average phase offset
     avgOffset = mean(wrapTo180(txAng - rxAng));
-    fOff = avgOffset*(f/360);
+    fOff = avgOffset*(Fsym/360);
     angCor = (0:length(symsRx)-1)'*avgOffset*pi/180;
     symsRxCor = symsRx.*exp(1i*angCor);
 

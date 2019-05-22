@@ -1,57 +1,57 @@
-function [] = setDSO(mode,Fsym,Nsyms,instrumentType,intrumentAddress)
+function [] = setDSO(mode,Fsym,Nsyms,DSOVisaType,DSOVisaAddress)
 %% setDSO.m
 %
-% Function to read the Rigol Oscilloscope
+% Function to automate applying DSO settings:
+%  trigger mode, channels enabled, Vertical and Horizontal Scaling, etc.
 %
 % INPUTS:
-%       mode
+%       mode                Set Mode:
 %                           1       - M-QAM Read
 %                           2       - TxCal
 %                           3       - RxCal
 %                           4       - Analog Filters
-%       Fsym                Symbol rate
+%       Fsym                Symbol rate for M-QAM Mode
 %       Nsyms               Number of symbols for M-QAM Mode
-%       instrumentType      VISA Instrument Type
+%       DSOVisaType         VISA Instrument Type
 %                           1       - NI
 %                           2       - Agilent
 %                           'xxxx'  - User Specified
 %                           Default - KEYSIGHT
-%       intrumentAddress    VISA Instrument Address, default Rigol DS4400
+%       DSOVisaAddress      VISA Instrument Address, default Rigol DS4400
 %
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
 
 %% Input Check
-if ~exist('instrumentType','var')
-    % Default instrument type is KEYSIGHT
-    instrumentType = 'KEYSIGHT';
+if ~exist('DSOVisaType','var')
+    % Default DSOVisa type is KEYSIGHT
+    DSOVisaType = 'KEYSIGHT';
 end
-if ~exist('intrumentAddress','var')
+if ~exist('DSOVisaAddress','var')
     % Default addresss
-    intrumentAddress = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
+    DSOVisaAddress = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
 end
 
 %% Set Instrument type if variable is numeric
-if isnumeric(instrumentType)
-    switch instrumentType
+if isnumeric(DSOVisaType)
+    switch DSOVisaType
         case 1
-            instrumentType = 'NI';
+            DSOVisaType = 'NI';
         case 2
-            instrumentType = 'Agilent';
+            DSOVisaType = 'Agilent';
         otherwise
-            instrumentType = 'KEYSIGHT';
+            DSOVisaType = 'KEYSIGHT';
     end
 end
 
-
-%% Interface configuration and instrument connection
+%% Interface configuration and DSOVisa connection
 % Find a VISA-USB object.
-visaObj = instrfind('Type', 'visa-usb', 'RsrcName', intrumentAddress, 'Tag', '');
+visaObj = instrfind('Type', 'visa-usb', 'RsrcName', DSOVisaAddress, 'Tag', '');
 
 % Create the VISA-USB object if it does not exist
 % otherwise use the object that was found.
 if isempty(visaObj)
-    visaObj = visa(instrumentType, intrumentAddress);
+    visaObj = visa(DSOVisaType, DSOVisaAddress);
 else
     fclose(visaObj);
     visaObj = visaObj(1);
@@ -65,13 +65,13 @@ visaObj.Timeout = 10;
 % Set the Byte order
 visaObj.ByteOrder = 'littleEndian';
 
-
 % Open the connection
 try
     fopen(visaObj);
 catch
     error('Could not access DSO. Check VISA Type and VISA Address are correct using the Instrument Control Toolbox.');
 end
+
 %% M-QAM Read Mode
 if mode == 1
     %Set Time mode

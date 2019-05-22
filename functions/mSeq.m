@@ -1,6 +1,8 @@
 function [mseq] = mSeq(n,taps)
-% mSeq.m
+%% mSeq.m
+%
 %   Produce maximal length sequence using linear feedback shift registers
+%
 %   INPUTS:
 %       n       number of registers
 %       taps    Feedback tap indicies
@@ -9,7 +11,6 @@ function [mseq] = mSeq(n,taps)
 %
 %   2018 - Patrick Cote
 %   EELE 591 - Special Topics
-
 
     % Initialize LFSRs
     N = 2^n-1;          % Length of M-Sequence
@@ -26,6 +27,5 @@ function [mseq] = mSeq(n,taps)
         % Feedback XOR sum into the first state
         x(1) = xfb;
     end
-
 
 end

@@ -1,6 +1,5 @@
 classdef LDPCCode < handle
     % Implements LDPC functionality
-    %  
     
     properties
         H;

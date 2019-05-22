@@ -1,16 +1,18 @@
-function [] = buildTxCal(filtType,instrumentType,instrumentAddress)
+function [] = buildTxCal(filtType,AWGVisaType,AWGVisaAddress)
 %% buildTxCal.m
 %
-%	Build a Transmit Calibration sequence and send to AWG
+%	This function builds a Transmit Calibration sequence and sends to AWG.
+%   The calibration sequence is a 10-register m-sequence mapped to a
+%   QPSK constellation.
 %
 % INPUTS:
 %       chnlFilt            Channel Filter (off,Normal,Step)->(0,1,2)
-%       instrumentType      VISA Instrument Type
+%       AWGVisaType         VISA Instrument Type
 %                           1       - NI
 %                           2       - Agilent
 %                           'xxxx'  - User Specified
 %                           Default - KEYSIGHT
-%       intrumentAddress    VISA Instrument Address
+%       AWGVisaAddress      VISA Instrument Address
 %
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
@@ -40,7 +42,7 @@ Vpp = 1;            % ARB Output Peak-Peak Voltage
 Fsamp = sps*fb;             % AWG sample rate           [Sa/s]
 try
     WRITE_TO_DISK = 0;
-	sendARB([Itx, Qtx],Vpp,Fsamp,filtType,instrumentType,instrumentAddress);
+	sendARB([Itx, Qtx],Vpp,Fsamp,filtType,AWGVisaType,AWGVisaAddress);
 catch
     warning('Failed sending signals to the AWG...');
     WRITE_TO_DISK = 1;

@@ -1,8 +1,33 @@
 function readTxCal(DSOVisaType,DSOVisaAddr,AWGVisaType,AWGVisaAddr)
-%% readRxCal.m
+%% readtxCal.m
+%
+% INPUTS:
+%       AWG/DSOVisaType         VISA Instrument Type
+%                           1       - NI
+%                           2       - Agilent
+%                           'xxxx'  - User Specified
+%                           Default - KEYSIGHT
+%       AWG/DSOVisaAddress      VISA Instrument Address
+%
+% 2019 - Patrick Cote
+% EELE 5380 - Adv. Signals and Systems
+
+%% Calibration Sequence Parameters
+% TODO: Adjustable Cal Sequence Parameters
+% Frequency Parameters
+fb = 5e3;           % Baseband Signal frequency         [Symbols/s]
+fLO = 100e3;        % Ideal Local Oscillator Freq       [Hz]
+
+% Calibration Sequence Generator Parameters
+N = 10;             % Number of shift registers for m seq generation
+Itaps = [10 9 5 2]; % Feedback Taps for I seq
+Qtaps = [10 9 7 6]; % Feedback Taps for Q seq
+
+% SNR Threshold
+SNR_THRESH = 10;    % Minimum SNR to determine quality of calibration
 
 %% Check for VISA Addresses and Type, if none, set defaults
-
+% Default DSO to Rigol
 if ~exist('DSOVisaAddr','var')
     disp('Setting default DSO address');
     DSOVisaAddr = 'USB0::0x1AB1::0x04B1::DS4A194800709::0::INSTR';
@@ -22,27 +47,6 @@ if ~exist('AWGVisaAddr','var')
     % Default addresss
     AWGVisaAddr = 'USB0::0x0957::0x2C07::MY52801516::0::INSTR';
 end
-
-
-%% Add Functions Path
-try
-    addpath('functions\');
-catch
-    warning('Functions Path Not Found.');
-end
-
-%% Cal Parameters
-% Frequency Parameters
-fb = 5e3;           % Baseband Signal frequency         [Symbols/s]
-fLO = 100e3;        % Ideal Local Oscillator Freq       [Hz]
-
-% Calibration Sequence Generator Parameters
-N = 10;             % Number of shift registers for m seq generation
-Itaps = [10 9 5 2]; % Feedback Taps for I seq
-Qtaps = [10 9 7 6]; % Feedback Taps for Q seq
-
-% SNR Threshold
-SNR_THRESH = 10;    % Minimum SNR to determine quality of calibration
 
 %% Read Signal
 % Check to see if Simulator Mode Flag was set from the GUI app
@@ -254,7 +258,6 @@ end
 save('Calibration Files\txMixerCoefs.mat','Ainv','Idc','Qdc')
 disp('Tx Cal Complete...');
 disp('Calibration coeffiencts saved to "Calibration Files\txMixerCoefs.mat"');
-
 
 end
 

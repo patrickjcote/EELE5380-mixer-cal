@@ -1,6 +1,8 @@
-function[out]  = writeArbFile( fileName, x, fs )
-%writeArbFile Function to generate an .arb file for the Agilent 33500B
-%arbitrary waveform generator
+function []  = writeArbFile( fileName, x, fs )
+%% writeArbFile.m
+% Function to generate an .arb file for the Agilent 33500B
+% arbitrary waveform generator
+%
 %   INPUTS:
 %       fileName        Name of file to be written (overwrites)
 %       x               Arbitrary signal
@@ -9,7 +11,6 @@ function[out]  = writeArbFile( fileName, x, fs )
 %   2018 - Montana Tech - Patrick Cote
 
 %% Error Checking
-
 if length(x)>1e6
     error('Max number of data points is 1e6');
 end
@@ -45,6 +46,5 @@ fprintf(fileID,'%d\n',x);
 
 % Close file
 fclose(fileID);
-out = x;
 end
 

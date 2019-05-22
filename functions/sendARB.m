@@ -17,21 +17,24 @@ function sendARB(x,Vpp,Fsamp,chnlFilt,instrumentType,intrumentAddress)
 %                           Default - KEYSIGHT
 %       intrumentAddress    VISA Instrument Address
 %
+% ------- Single Channel Mode -------
+% Input for one channel: x = [ xCh ] where xCh is a column vector
+% The default operation is to send x to Channel 1
+% To load a single waveform into Channel 2, set Vpp to two values. Vpp = [1,1]
 %
-% % Two Channel Mode %
+% ------- Dual Channel Mode -------
 % Input for two channels: x = [xCh1, xCh2] where xCh1 and xCh2 are column vectors
-% If only single values are supplied for Vpp,Fsamp, or chnlFilt, that value
-% will be used for both waveforms.
+% If only single values are supplied for Vpp, Fsamp, or chnlFilt, that value
+% will be used for both waveforms. Channels 1 and 2 will be synchronized
+% after both files have been loaded.
 %
-% % Only Channel 2 Mode %
-% If only one waveform is supplied the default is to send it to Channel 1
-% To load a single waveform into Channel 2, the Vpp input must have two
-% values.
-
 % Adapted from:
-%       arbTo33500_nchannel.m   by Tyler Holliday
+%       arbTo33500_Nchannel.m   by Tyler Holliday
 %       arbTo33500.m            by Neil Forcier
 %       AgArbTrans_V2.m         by Salaheddin Hosseinzadeh
+%
+% 2019 - Patrick Cote
+% EELE 5380 - Adv. Signals and Systems
 
 %% Input Check
 % Check Signal Size

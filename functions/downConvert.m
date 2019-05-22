@@ -1,9 +1,12 @@
 function [Irx,Qrx] = downConvert(RFrx,fLO,Fs,taps)
-% frameSync.m
+%% downConvert.m
+%
+%   Digitally downconvert a signal and filter with a simple moving average
+%   FIR Filter.
 %
 %   INPUTS:
 %       RFrx        Received RF samples
-%       fLO         Local Oscillator Frequency
+%       fLO         Digital Local Oscillator Frequency
 %       Fs          Sample Rate
 %       taps        # of evenly weighted taps for FIR moving average filter
 %   OUTPUTS:
