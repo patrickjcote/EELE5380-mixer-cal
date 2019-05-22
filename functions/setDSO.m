@@ -80,7 +80,7 @@ if mode == 1
     % Trigger off Channel 1
     fprintf(visaObj,':TRIGger:EDGe:SOURce CHANNEl1');
     % Set Trigger Level
-    fprintf(visaObj,':TRIGger:EDGe:LEVel 0.25');
+%     fprintf(visaObj,':TRIGger:EDGe:LEVel 0.05');
     % Turn on 20MHz Bandwidth Filters
     fprintf(visaObj,':CHANnel1:BWLimit 20M');
     fprintf(visaObj,':CHANnel2:BWLimit 20M');
