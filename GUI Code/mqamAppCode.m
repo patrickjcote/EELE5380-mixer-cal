@@ -50,6 +50,9 @@ classdef mqamApp < matlab.apps.AppBase
             app.ScopeDropDown.ItemsData = {''};
             app.AWGDropDown.Items = {''};
             app.AWGDropDown.ItemsData = {''};
+            % Disable Buttons
+            app.SendButton.Enable = 0;
+            app.ReadButton.Enable = 0;
             % Force a redraw of GUI
             drawnow
             
@@ -206,6 +209,10 @@ classdef mqamApp < matlab.apps.AppBase
 
         % Value changed function: SendButton
         function SendButtonValueChanged(app, event)
+            
+            app.Status.Text = 'Starting Transmit...';
+            app.Status.FontColor = 'Black';
+            
             global SIM_MODE
             SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
             
@@ -269,6 +276,10 @@ classdef mqamApp < matlab.apps.AppBase
 
         % Value changed function: ReadButton
         function ReadButtonValueChanged(app, event)
+            
+            app.Status.Text = 'Starting Receive...';
+            app.Status.FontColor = 'Black';
+            
             global SIM_MODE
             SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
             
@@ -325,6 +336,10 @@ classdef mqamApp < matlab.apps.AppBase
                     end
                     
                     app.ReadButton.Value = 0;
+                    
+            % Disable/Enable visablity to bring app window back to the foreground
+            app.MQAMSystemv05UIFigure.Visible = 0;
+            app.MQAMSystemv05UIFigure.Visible = 1;
         end
 
         % Button pushed function: RefreshDeviceListButton
@@ -341,9 +356,13 @@ classdef mqamApp < matlab.apps.AppBase
                     % Enable Calibration Function Buttons
                     app.SendButton.Enable = 1;
                     app.ReadButton.Enable = 1;
+                    app.ApplyRxCalibrationSwitch.Value = 'Off';
+                    app.ApplyTxCalibrationSwitch.Value = 'Off';
                     app.Status.FontColor = [0.47 0.67 0.19];
                     app.Status.Text = 'Entered Simulator Mode.';
                 else
+                    app.ApplyRxCalibrationSwitch.Value = 'On';
+                    app.ApplyTxCalibrationSwitch.Value = 'On';
                     refreshDevices(app);
                 end
         end
