@@ -19,6 +19,8 @@ classdef mqamApp < matlab.apps.AppBase
         LDPCBlockLengthDropDownLabel   matlab.ui.control.Label
         RateDropDownLabel              matlab.ui.control.Label
         TurboButton                    matlab.ui.control.RadioButton
+        DataRateLabel                  matlab.ui.control.Label
+        DataRateTxt                    matlab.ui.control.Label
         BlockSettingsTab               matlab.ui.container.Tab
         BlockLengthsymbolsEditFieldLabel  matlab.ui.control.Label
         BlockLengthsymbolsEditField    matlab.ui.control.NumericEditField
@@ -190,7 +192,28 @@ classdef mqamApp < matlab.apps.AppBase
             grid on; grid minor;
             
         end
+        
+        function [] = calcDataRate(app)
+            symRate = app.SymbolRatesymssecEditField.Value;
+            bpSym = log2(str2num(app.QAMOrderDropDown.Value));
+            
+            selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
+                
+                switch selectedButton.Text
+                    case 'None'
+                        codeRate = 1;
+                    otherwise
+                        ratesVec = [1/2 2/3 3/4 5/6];
+                        codeRate = ratesVec(str2num(app.RateDropDown.Value));
+                end
+                
+
+            dataRate = symRate*bpSym*codeRate;
+            
+            app.DataRateTxt.Text = [num2str(dataRate), ' bit/s'];
+        end
     end
+    
     
 
     % Callbacks that handle component events
@@ -210,6 +233,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.RefreshLamp.Color = 'Yellow';
             refreshDevices(app);
             
+            calcDataRate(app);
         end
 
         % Value changed function: SendButton
@@ -443,6 +467,25 @@ classdef mqamApp < matlab.apps.AppBase
                         app.LDPCBlockLengthDropDown.Visible = 0;
                 end
                 
+                calcDataRate(app);
+                
+        end
+
+        % Value changed function: QAMOrderDropDown
+        function QAMOrderDropDownValueChanged(app, event)
+
+            calcDataRate(app);
+        end
+
+        % Value changed function: RateDropDown
+        function RateDropDownValueChanged(app, event)
+            calcDataRate(app);
+            
+        end
+
+        % Value changed function: LDPCBlockLengthDropDown
+        function LDPCBlockLengthDropDownValueChanged(app, event)
+            calcDataRate(app);
         end
     end
 
@@ -487,6 +530,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.QAMOrderDropDown = uidropdown(app.TxRxTab);
             app.QAMOrderDropDown.Items = {'4', '16', '32', '64', '128', '256', '512', '1024'};
             app.QAMOrderDropDown.Editable = 'on';
+            app.QAMOrderDropDown.ValueChangedFcn = createCallbackFcn(app, @QAMOrderDropDownValueChanged, true);
             app.QAMOrderDropDown.BackgroundColor = [1 1 1];
             app.QAMOrderDropDown.Position = [194 307 144 22];
             app.QAMOrderDropDown.Value = '4';
@@ -523,6 +567,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.RateDropDown = uidropdown(app.ForwardErrorCorrectionButtonGroup);
             app.RateDropDown.Items = {'1/2', '2/3', '3/4', '5/6'};
             app.RateDropDown.ItemsData = {'1', '2', '3', '4'};
+            app.RateDropDown.ValueChangedFcn = createCallbackFcn(app, @RateDropDownValueChanged, true);
             app.RateDropDown.Position = [226 76 100 22];
             app.RateDropDown.Value = '1';
 
@@ -530,6 +575,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.LDPCBlockLengthDropDown = uidropdown(app.ForwardErrorCorrectionButtonGroup);
             app.LDPCBlockLengthDropDown.Items = {'648', '1296', '1944'};
             app.LDPCBlockLengthDropDown.ItemsData = {'648', '1296', '1944'};
+            app.LDPCBlockLengthDropDown.ValueChangedFcn = createCallbackFcn(app, @LDPCBlockLengthDropDownValueChanged, true);
             app.LDPCBlockLengthDropDown.Position = [226 34 100 22];
             app.LDPCBlockLengthDropDown.Value = '648';
 
@@ -550,6 +596,16 @@ classdef mqamApp < matlab.apps.AppBase
             app.TurboButton.Enable = 'off';
             app.TurboButton.Text = 'Turbo';
             app.TurboButton.Position = [11 12 65 22];
+
+            % Create DataRateLabel
+            app.DataRateLabel = uilabel(app.TxRxTab);
+            app.DataRateLabel.Position = [29 128 63 22];
+            app.DataRateLabel.Text = 'Data Rate:';
+
+            % Create DataRateTxt
+            app.DataRateTxt = uilabel(app.TxRxTab);
+            app.DataRateTxt.Position = [104 128 91 22];
+            app.DataRateTxt.Text = '';
 
             % Create BlockSettingsTab
             app.BlockSettingsTab = uitab(app.TabGroup);
