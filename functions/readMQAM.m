@@ -7,7 +7,7 @@ function [] = readMQAM(rxObj,DSOVisaType,DSOVisaAddr)
 %
 % INPUTS
 %       rxObj.Fsym      Symbol Rate
-%       rxObj.Nsyms 	Frame Length in Symbols
+%       rxObj.Nsyms 	Block Length in Symbols
 %       rxObj.encBits   Known Transmit Bits
 %       rxObj.dataBits  Known Data Bits
 %       rxObj.rxCal     Apply Receiver Calibration Flag
@@ -37,6 +37,8 @@ try
     txBits = rxObj.dataBits;
     RX_CAL = rxObj.rxCal;
     CODING = rxObj.coding;
+    preM = rxObj.preM;
+    preTaps = rxObj.preTaps;
 catch
     error('Rx Object not properly initialized.');
 end
@@ -117,44 +119,48 @@ Qrx = filter(b,1,Qrx);
 
 %% Frame Sync
 % Build known sent symbols to use in synchronization
-syncSyms  = qammod(TXdataBlock,M,'gray','InputType','bit','UnitAveragePower',true,'PlotConstellation',false);
+syncSyms = ([mSeq(preM,preTaps);1]*2-1);               % Preamble M-sequence
 % Synchronize and slice
-[symsRx, sto, lag] = frameSync(Irx,Qrx,syncSyms,Rxsps,length(syncSyms));
+[allSymsRx, sto, lag] = frameSync(Irx,Qrx,syncSyms,Rxsps,(length(syncSyms) + Nsyms));
+preRx = allSymsRx(1:length(syncSyms));
+dataSymsRx = allSymsRx(length(syncSyms)+1:end);
 
 %% AGC
-symsRx = symsRx/mean(abs(symsRx)) * mean(abs(syncSyms));
+dataSymsRx = dataSymsRx/mean(abs(preRx)) * mean(abs(syncSyms));
+preRx = preRx/mean(abs(preRx)) * mean(abs(syncSyms));
 
 %% DC Offset
-Idc = mean(real(symsRx))-mean(real(syncSyms));
-Qdc = mean(imag(symsRx))-mean(imag(syncSyms));
-symsRx = symsRx - Idc - 1i*Qdc;
-
+Idc = mean(real(preRx))-mean(real(syncSyms));
+Qdc = mean(imag(preRx))-mean(imag(syncSyms));
+preRx = preRx - Idc - 1i*Qdc;
+dataSymsRx = dataSymsRx  - Idc - 1i*Qdc;
 %% Phase Offset Correction
 % Calculate phase offset
-phaseOFF = (angle(symsRx) - angle(syncSyms))*180/pi;
+phaseOFF = (angle(preRx) - angle(syncSyms))*180/pi;
 phaseOffset = mean(wrapTo180(phaseOFF));
 % Derotate symbols
-symsRx = symsRx.*exp(-1i*phaseOffset*pi/180);
+preRx = preRx.*exp(-1i*phaseOffset*pi/180);
+dataSymsRx = dataSymsRx.*exp(-1i*phaseOffset*pi/180);
 
-%% SNR Calc
-noiseRx = symsRx - syncSyms;
+%% Preamble SNR Calc
+noiseRx = preRx - syncSyms;
 SNR = 10*log10(mean(abs(syncSyms).^2)/mean(abs(noiseRx).^2))
 
 %% Demodulate and Decode
 if ~CODING
-    rxBits = qamdemod(symsRx,M,'gray','OutputType','bit','UnitAveragePower',true);
+    rxBits = qamdemod(dataSymsRx,M,'gray','OutputType','bit','UnitAveragePower',true);
 else
-    rxLLRs = qamdemod(symsRx,M,'gray','OutputType','approxllr','UnitAveragePower',true);
+    rxLLRs = qamdemod(dataSymsRx,M,'gray','OutputType','approxllr','UnitAveragePower',true);
     
     if CODING == 1
         % conv decode
-        rxBits = convDecode(rxLLRs,rxObj.rate,length(txBits));
+        rxBits = convDecode(rxLLRs,rxObj.rate);
     elseif CODING == 2
         % LDPC decode
         rxBits = ldpcDecode(rxLLRs,rxObj.blockLen,rxObj.rate);
     end
-    
 end
+
 %% Calculate BER
 bit_errors = sum( rxBits ~= txBits);
 totalBits = length(txBits);
@@ -183,9 +189,9 @@ errs = rxBits ~= txBits;
 ndx = ceil(find(errs==1)/log2(M));
 % Plot
 figure;
-plot(real(symsRx),imag(symsRx),'.',real(symsRx(ndx)),imag(symsRx(ndx)),'r.')
+plot(real(dataSymsRx),imag(dataSymsRx),'.',real(dataSymsRx(ndx)),imag(dataSymsRx(ndx)),'r.')
 pbaspect([1 1 1]);
-axis([-1.5 1.5 -1.5 1.5]*max(abs(symsRx)));
+axis([-1.1 1.1 -1.1 1.1]*max(abs(dataSymsRx)));
 xlabel('I');ylabel('Q');
 title('Received Constellation');
 grid on; grid minor;

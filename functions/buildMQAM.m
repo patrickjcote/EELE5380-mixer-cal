@@ -60,12 +60,12 @@ if isnumeric(AWGVisaType)
 end
 
 
-sps = 50;           % Samples per Symbol        [Samp/sym]
+sps = 5;           % Samples per Symbol        [Samp/sym]
 
 %% Build BPSK Preamble and Modulated Data Block
-preamble = (mSeq(preM,preTaps)*2-1);               % Preamble M-sequence
+preamble = ([mSeq(preM,preTaps);1]*2-1);               % Preamble M-sequence
 dataBlock  = qammod(txBlock,M,'gray','InputType','bit','UnitAveragePower',true);
-txBlock = [preamble,dataBlock];
+txBlock = [preamble;dataBlock];
 
 %% Build Output
 Qtx = rectpulse(imag(txBlock),sps);
@@ -128,7 +128,7 @@ if WRITE_TO_DISK
     if ~dirpath
         error('Build M-QAM Tx Files Operation Cancled by User');
     end
-    
+        
     % Build AWG Files
     writeArbFile([dirpath,'\',num2str(M),'Q_i_',fname],Itx,Fsamp);
     writeArbFile([dirpath,'\',num2str(M),'Q_q_',fname],Qtx,Fsamp);

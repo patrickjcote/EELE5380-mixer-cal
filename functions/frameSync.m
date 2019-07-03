@@ -45,16 +45,22 @@ function [symsRx,sto,n0] = frameSync(Irx,Qrx,syncSyms,sps,frameLen)
     % Starting at the first sync symbol, slice all samples in the frame len
     symsRx = zeros(frameLen,1);
     for n = 1:frameLen
-        k = (n-1)*sps + sto + n0*sps;
+        k = (n-1)*sps + sto + n0*sps - 1;
         symsRx(n) = (Irx(k) + 1i*Qrx(k));
     end
     
     %% Phase Offset Correction
     % Calculate an average phase offset from the known symbols
-    phaseOFF = (angle(symsRx) - angle(syncSyms))*180/pi;
+    phaseOFF = (angle(symsRx(1:length(syncSyms))) - angle(syncSyms))*180/pi;
     phaseOffset = mean(wrapTo180(phaseOFF));
     % De-rotate the received symbols
     symsRx = symsRx.*exp(-1i*phaseOffset*pi/180);
+    IrxCorr = real((Irx + 1i*Qrx).*exp(-1i*phaseOffset*pi/180));
    
-
+    % Plot
+    sto0 = n0*sps + sto;
+    symNdx = (0:frameLen-1)*sps + sto0 - 1;
+    n = 1:length(IrxCorr);
+    figure;
+    plot(n,IrxCorr,symNdx,IrxCorr(symNdx),'x')
 end
