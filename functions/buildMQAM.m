@@ -11,6 +11,8 @@ function [] = buildMQAM(txObj,filtType,AWGVisaType,AWGVisaAddress)
 %       txObj.data      Transmit Data Bits
 %       txObj.txCal     Apply Transmit Calibration Flag
 %       txObj.M         Modulation Order
+%       txObj.preM      Preamble m-seq order
+%       txObj.preTaps   Preamble m-seq taps
 %       filtType        AWG channel filter type (0-off,1-normal,2-step)
 %       AWGVisaType     VISA Instrument Type
 %                           1       - NI

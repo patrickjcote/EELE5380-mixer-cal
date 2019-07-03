@@ -4,21 +4,11 @@ classdef mqamApp < matlab.apps.AppBase
     properties (Access = public)
         MQAMSystemv05UIFigure          matlab.ui.Figure
         TabGroup                       matlab.ui.container.TabGroup
-        MQAMTab                        matlab.ui.container.Tab
+        TxRxTab                        matlab.ui.container.Tab
         SendButton                     matlab.ui.control.StateButton
         ReadButton                     matlab.ui.control.StateButton
-        MQAMDropDownLabel              matlab.ui.control.Label
-        MQAMDropDown                   matlab.ui.control.DropDown
-        FrameLengthsymbolsEditFieldLabel  matlab.ui.control.Label
-        FrameLengthsymbolsEditField    matlab.ui.control.NumericEditField
-        RandomSeedEditFieldLabel       matlab.ui.control.Label
-        RandomSeedEditField            matlab.ui.control.NumericEditField
-        SymbolRatesymssecEditFieldLabel  matlab.ui.control.Label
-        SymbolRatesymssecEditField     matlab.ui.control.NumericEditField
-        ApplyTxCalibrationSwitchLabel  matlab.ui.control.Label
-        ApplyTxCalibrationSwitch       matlab.ui.control.ToggleSwitch
-        ApplyRxCalibrationSwitchLabel  matlab.ui.control.Label
-        ApplyRxCalibrationSwitch       matlab.ui.control.ToggleSwitch
+        QAMOrderDropDownLabel          matlab.ui.control.Label
+        QAMOrderDropDown               matlab.ui.control.DropDown
         Status                         matlab.ui.control.Label
         ForwardErrorCorrectionButtonGroup  matlab.ui.container.ButtonGroup
         NoneButton                     matlab.ui.control.RadioButton
@@ -28,6 +18,20 @@ classdef mqamApp < matlab.apps.AppBase
         LDPCBlockLengthDropDown        matlab.ui.control.DropDown
         LDPCBlockLengthDropDownLabel   matlab.ui.control.Label
         RateDropDownLabel              matlab.ui.control.Label
+        TurboButton                    matlab.ui.control.RadioButton
+        BlockSettingsTab               matlab.ui.container.Tab
+        BlockLengthsymbolsEditFieldLabel  matlab.ui.control.Label
+        BlockLengthsymbolsEditField    matlab.ui.control.NumericEditField
+        RandomSeedEditFieldLabel       matlab.ui.control.Label
+        RandomSeedEditField            matlab.ui.control.NumericEditField
+        SymbolRatesymssecEditFieldLabel  matlab.ui.control.Label
+        SymbolRatesymssecEditField     matlab.ui.control.NumericEditField
+        ApplyTxCalibrationSwitchLabel  matlab.ui.control.Label
+        ApplyTxCalibrationSwitch       matlab.ui.control.ToggleSwitch
+        ApplyRxCalibrationSwitchLabel  matlab.ui.control.Label
+        ApplyRxCalibrationSwitch       matlab.ui.control.ToggleSwitch
+        SyncPreambleLengthDropDownLabel  matlab.ui.control.Label
+        SyncPreambleLengthDropDown     matlab.ui.control.DropDown
         DeviceSettingsTab              matlab.ui.container.Tab
         ScopeDropDownLabel             matlab.ui.control.Label
         ScopeDropDown                  matlab.ui.control.DropDown
@@ -122,8 +126,8 @@ classdef mqamApp < matlab.apps.AppBase
             
             selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
             
-            M = str2num(app.MQAMDropDown.Value);
-            N_syms = app.FrameLengthsymbolsEditField.Value;
+            M = str2num(app.QAMOrderDropDown.Value);
+            N_syms = app.BlockLengthsymbolsEditField.Value;
             rng_seed = app.RandomSeedEditField.Value;
             
             switch selectedButton.Text
@@ -189,6 +193,7 @@ classdef mqamApp < matlab.apps.AppBase
     end
     
 
+    % Callbacks that handle component events
     methods (Access = private)
 
         % Code that executes after component creation
@@ -235,7 +240,7 @@ classdef mqamApp < matlab.apps.AppBase
             
             % Load Tx Object
             txObj.Fsym = app.SymbolRatesymssecEditField.Value;
-            txObj.Nsyms = app.FrameLengthsymbolsEditField.Value;
+            txObj.Nsyms = app.BlockLengthsymbolsEditField.Value;
             
             try
                 [encBlock, dataBits] = buildencBlock(app);
@@ -251,7 +256,26 @@ classdef mqamApp < matlab.apps.AppBase
             txObj.encBits = encBlock;
             txObj.dataBits = dataBits;
             txObj.txCal = TX_CAL;
-            txObj.M = str2num(app.MQAMDropDown.Value);
+            txObj.M = str2num(app.QAMOrderDropDown.Value);
+            
+            % Load Preamble Length, Set M-seq order and taps
+            switch str2num(app.SyncPreambleLengthDropDown.Value)
+                case 256
+                    txObj.preM = 8;
+                    txObj.preTaps = [8, 6, 5, 4];
+                case 512
+                    txObj.preM = 9;
+                    txObj.preTaps = [9, 8, 6, 5];
+                case 1024
+                    txObj.preM = 10;
+                    txObj.preTaps = [10, 9, 7, 6];
+                case 2048
+                    txObj.preM = 11;
+                    txObj.preTaps = [11, 10, 9, 7];
+                otherwise
+                    txObj.preM = 10;
+                    txObj.preTaps = [10, 9, 7, 6];
+            end
             
             try
                 buildMQAM(txObj,2,AWGVisaType,AWGVisaAddr);
@@ -301,9 +325,29 @@ classdef mqamApp < matlab.apps.AppBase
             
             % Load Tx Object
             txObj.Fsym = app.SymbolRatesymssecEditField.Value;
-            txObj.Nsyms = app.FrameLengthsymbolsEditField.Value;
+            txObj.Nsyms = app.BlockLengthsymbolsEditField.Value;
             txObj.rxCal = RX_CAL;
-            txObj.M = str2num(app.MQAMDropDown.Value);
+            txObj.M = str2num(app.QAMOrderDropDown.Value);
+            
+            % Load Preamble Length, Set M-seq order and taps
+            switch str2num(app.SyncPreambleLengthDropDown.Value)
+                case 256
+                    txObj.preM = 8;
+                    txObj.preTaps = [8, 6, 5, 4];
+                case 512
+                    txObj.preM = 9;
+                    txObj.preTaps = [9, 8, 6, 5];
+                case 1024
+                    txObj.preM = 10;
+                    txObj.preTaps = [10, 9, 7, 6];
+                case 2048
+                    txObj.preM = 11;
+                    txObj.preTaps = [11, 10, 9, 7];
+                otherwise
+                    txObj.preM = 10;
+                    txObj.preTaps = [10, 9, 7, 6];
+            end
+            
             
             [encBlock, dataBits] = buildencBlock(app);
             txObj.encBits = encBlock;
@@ -378,19 +422,19 @@ classdef mqamApp < matlab.apps.AppBase
                         app.RateDropDownLabel.Visible = 0;
                         app.LDPCBlockLengthDropDown.Visible = 0;
                         app.LDPCBlockLengthDropDownLabel.Visible = 0;
-                        app.FrameLengthsymbolsEditField.Enable = 1;
+                        app.BlockLengthsymbolsEditField.Enable = 1;
                     case 'Convolutional'
                         app.RateDropDown.Visible = 1;
                         app.RateDropDownLabel.Visible = 1;
                         app.LDPCBlockLengthDropDown.Visible = 0;
                         app.LDPCBlockLengthDropDownLabel.Visible = 0;
-                        app.FrameLengthsymbolsEditField.Enable = 1;
+                        app.BlockLengthsymbolsEditField.Enable = 1;
                     case 'LDPC'
                         app.RateDropDown.Visible = 1;
                         app.RateDropDownLabel.Visible = 1;
                         app.LDPCBlockLengthDropDown.Visible = 1;
                         app.LDPCBlockLengthDropDownLabel.Visible = 1;
-                        app.FrameLengthsymbolsEditField.Enable = 0;
+                        app.BlockLengthsymbolsEditField.Enable = 0;
                     otherwise
                         app.RateDropDown.Visible = 0;
                         app.LDPCBlockLengthDropDown.Visible = 0;
@@ -399,158 +443,180 @@ classdef mqamApp < matlab.apps.AppBase
         end
     end
 
-    % App initialization and construction
+    % Component initialization
     methods (Access = private)
 
         % Create UIFigure and components
         function createComponents(app)
 
-            % Create MQAMSystemv05UIFigure
-            app.MQAMSystemv05UIFigure = uifigure;
-            app.MQAMSystemv05UIFigure.Position = [100 100 396 464];
+            % Create MQAMSystemv05UIFigure and hide until all components are created
+            app.MQAMSystemv05UIFigure = uifigure('Visible', 'off');
+            app.MQAMSystemv05UIFigure.Position = [100 100 396 370];
             app.MQAMSystemv05UIFigure.Name = 'M-QAM System - v0.5';
             app.MQAMSystemv05UIFigure.Resize = 'off';
 
             % Create TabGroup
             app.TabGroup = uitabgroup(app.MQAMSystemv05UIFigure);
-            app.TabGroup.Position = [1 -4 397 469];
+            app.TabGroup.Position = [1 -8 397 379];
 
-            % Create MQAMTab
-            app.MQAMTab = uitab(app.TabGroup);
-            app.MQAMTab.Title = 'M-QAM';
+            % Create TxRxTab
+            app.TxRxTab = uitab(app.TabGroup);
+            app.TxRxTab.Title = 'Tx/Rx';
 
             % Create SendButton
-            app.SendButton = uibutton(app.MQAMTab, 'state');
+            app.SendButton = uibutton(app.TxRxTab, 'state');
             app.SendButton.ValueChangedFcn = createCallbackFcn(app, @SendButtonValueChanged, true);
             app.SendButton.Text = 'Send';
-            app.SendButton.Position = [67 56 100 22];
+            app.SendButton.Position = [60 55 100 22];
 
             % Create ReadButton
-            app.ReadButton = uibutton(app.MQAMTab, 'state');
+            app.ReadButton = uibutton(app.TxRxTab, 'state');
             app.ReadButton.ValueChangedFcn = createCallbackFcn(app, @ReadButtonValueChanged, true);
             app.ReadButton.Text = 'Read';
-            app.ReadButton.Position = [238 56 100 22];
+            app.ReadButton.Position = [239 55 100 22];
 
-            % Create MQAMDropDownLabel
-            app.MQAMDropDownLabel = uilabel(app.MQAMTab);
-            app.MQAMDropDownLabel.Position = [60 397 47 22];
-            app.MQAMDropDownLabel.Text = 'M-QAM';
+            % Create QAMOrderDropDownLabel
+            app.QAMOrderDropDownLabel = uilabel(app.TxRxTab);
+            app.QAMOrderDropDownLabel.Position = [60 307 67 22];
+            app.QAMOrderDropDownLabel.Text = 'QAM Order';
 
-            % Create MQAMDropDown
-            app.MQAMDropDown = uidropdown(app.MQAMTab);
-            app.MQAMDropDown.Items = {'4', '16', '32', '64', '128', '256', '512', '1024'};
-            app.MQAMDropDown.Editable = 'on';
-            app.MQAMDropDown.BackgroundColor = [1 1 1];
-            app.MQAMDropDown.Position = [194 397 144 22];
-            app.MQAMDropDown.Value = '4';
-
-            % Create FrameLengthsymbolsEditFieldLabel
-            app.FrameLengthsymbolsEditFieldLabel = uilabel(app.MQAMTab);
-            app.FrameLengthsymbolsEditFieldLabel.Position = [60 328 136 22];
-            app.FrameLengthsymbolsEditFieldLabel.Text = 'Frame Length (symbols)';
-
-            % Create FrameLengthsymbolsEditField
-            app.FrameLengthsymbolsEditField = uieditfield(app.MQAMTab, 'numeric');
-            app.FrameLengthsymbolsEditField.Position = [238 328 100 22];
-            app.FrameLengthsymbolsEditField.Value = 2000;
-
-            % Create RandomSeedEditFieldLabel
-            app.RandomSeedEditFieldLabel = uilabel(app.MQAMTab);
-            app.RandomSeedEditFieldLabel.Position = [58 292 82 22];
-            app.RandomSeedEditFieldLabel.Text = 'Random Seed';
-
-            % Create RandomSeedEditField
-            app.RandomSeedEditField = uieditfield(app.MQAMTab, 'numeric');
-            app.RandomSeedEditField.Position = [238 292 100 22];
-            app.RandomSeedEditField.Value = 2369;
-
-            % Create SymbolRatesymssecEditFieldLabel
-            app.SymbolRatesymssecEditFieldLabel = uilabel(app.MQAMTab);
-            app.SymbolRatesymssecEditFieldLabel.Position = [60 361 136 22];
-            app.SymbolRatesymssecEditFieldLabel.Text = 'Symbol Rate (syms/sec)';
-
-            % Create SymbolRatesymssecEditField
-            app.SymbolRatesymssecEditField = uieditfield(app.MQAMTab, 'numeric');
-            app.SymbolRatesymssecEditField.Position = [238 361 100 22];
-            app.SymbolRatesymssecEditField.Value = 1000;
-
-            % Create ApplyTxCalibrationSwitchLabel
-            app.ApplyTxCalibrationSwitchLabel = uilabel(app.MQAMTab);
-            app.ApplyTxCalibrationSwitchLabel.HorizontalAlignment = 'center';
-            app.ApplyTxCalibrationSwitchLabel.Position = [60 252 113 22];
-            app.ApplyTxCalibrationSwitchLabel.Text = 'Apply Tx Calibration';
-
-            % Create ApplyTxCalibrationSwitch
-            app.ApplyTxCalibrationSwitch = uiswitch(app.MQAMTab, 'toggle');
-            app.ApplyTxCalibrationSwitch.Orientation = 'horizontal';
-            app.ApplyTxCalibrationSwitch.Position = [99 228 38 16];
-            app.ApplyTxCalibrationSwitch.Value = 'On';
-
-            % Create ApplyRxCalibrationSwitchLabel
-            app.ApplyRxCalibrationSwitchLabel = uilabel(app.MQAMTab);
-            app.ApplyRxCalibrationSwitchLabel.HorizontalAlignment = 'center';
-            app.ApplyRxCalibrationSwitchLabel.Position = [228 252 118 22];
-            app.ApplyRxCalibrationSwitchLabel.Text = ' Apply Rx Calibration';
-
-            % Create ApplyRxCalibrationSwitch
-            app.ApplyRxCalibrationSwitch = uiswitch(app.MQAMTab, 'toggle');
-            app.ApplyRxCalibrationSwitch.Orientation = 'horizontal';
-            app.ApplyRxCalibrationSwitch.Position = [268 229 38 16];
-            app.ApplyRxCalibrationSwitch.Value = 'On';
+            % Create QAMOrderDropDown
+            app.QAMOrderDropDown = uidropdown(app.TxRxTab);
+            app.QAMOrderDropDown.Items = {'4', '16', '32', '64', '128', '256', '512', '1024'};
+            app.QAMOrderDropDown.Editable = 'on';
+            app.QAMOrderDropDown.BackgroundColor = [1 1 1];
+            app.QAMOrderDropDown.Position = [194 307 144 22];
+            app.QAMOrderDropDown.Value = '4';
 
             % Create Status
-            app.Status = uilabel(app.MQAMTab);
+            app.Status = uilabel(app.TxRxTab);
             app.Status.HorizontalAlignment = 'center';
-            app.Status.Position = [48 22 302 22];
+            app.Status.Position = [47 12 302 22];
             app.Status.Text = '';
 
             % Create ForwardErrorCorrectionButtonGroup
-            app.ForwardErrorCorrectionButtonGroup = uibuttongroup(app.MQAMTab);
+            app.ForwardErrorCorrectionButtonGroup = uibuttongroup(app.TxRxTab);
             app.ForwardErrorCorrectionButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @ForwardErrorCorrectionButtonGroupSelectionChanged, true);
             app.ForwardErrorCorrectionButtonGroup.Title = 'Forward Error Correction';
-            app.ForwardErrorCorrectionButtonGroup.Position = [30 95 338 106];
+            app.ForwardErrorCorrectionButtonGroup.Position = [29 163 338 123];
 
             % Create NoneButton
             app.NoneButton = uiradiobutton(app.ForwardErrorCorrectionButtonGroup);
             app.NoneButton.Text = 'None';
-            app.NoneButton.Position = [11 60 58 22];
+            app.NoneButton.Position = [11 77 58 22];
             app.NoneButton.Value = true;
 
             % Create ConvolutionalButton
             app.ConvolutionalButton = uiradiobutton(app.ForwardErrorCorrectionButtonGroup);
             app.ConvolutionalButton.Text = 'Convolutional';
-            app.ConvolutionalButton.Position = [11 38 95 22];
+            app.ConvolutionalButton.Position = [11 55 95 22];
 
             % Create LDPCButton
             app.LDPCButton = uiradiobutton(app.ForwardErrorCorrectionButtonGroup);
             app.LDPCButton.Text = 'LDPC';
-            app.LDPCButton.Position = [11 16 65 22];
+            app.LDPCButton.Position = [11 33 65 22];
 
             % Create RateDropDown
             app.RateDropDown = uidropdown(app.ForwardErrorCorrectionButtonGroup);
             app.RateDropDown.Items = {'1/2', '2/3', '3/4', '5/6'};
             app.RateDropDown.ItemsData = {'1', '2', '3', '4'};
-            app.RateDropDown.Position = [226 59 100 22];
+            app.RateDropDown.Position = [226 76 100 22];
             app.RateDropDown.Value = '1';
 
             % Create LDPCBlockLengthDropDown
             app.LDPCBlockLengthDropDown = uidropdown(app.ForwardErrorCorrectionButtonGroup);
             app.LDPCBlockLengthDropDown.Items = {'648', '1296', '1944'};
             app.LDPCBlockLengthDropDown.ItemsData = {'648', '1296', '1944'};
-            app.LDPCBlockLengthDropDown.Position = [226 17 100 22];
+            app.LDPCBlockLengthDropDown.Position = [226 34 100 22];
             app.LDPCBlockLengthDropDown.Value = '648';
 
             % Create LDPCBlockLengthDropDownLabel
             app.LDPCBlockLengthDropDownLabel = uilabel(app.ForwardErrorCorrectionButtonGroup);
             app.LDPCBlockLengthDropDownLabel.HorizontalAlignment = 'right';
-            app.LDPCBlockLengthDropDownLabel.Position = [142 16 75 22];
+            app.LDPCBlockLengthDropDownLabel.Position = [142 33 75 22];
             app.LDPCBlockLengthDropDownLabel.Text = 'Block Length';
 
             % Create RateDropDownLabel
             app.RateDropDownLabel = uilabel(app.ForwardErrorCorrectionButtonGroup);
             app.RateDropDownLabel.HorizontalAlignment = 'right';
-            app.RateDropDownLabel.Position = [180 59 31 22];
+            app.RateDropDownLabel.Position = [180 76 31 22];
             app.RateDropDownLabel.Text = 'Rate';
+
+            % Create TurboButton
+            app.TurboButton = uiradiobutton(app.ForwardErrorCorrectionButtonGroup);
+            app.TurboButton.Enable = 'off';
+            app.TurboButton.Text = 'Turbo';
+            app.TurboButton.Position = [11 12 65 22];
+
+            % Create BlockSettingsTab
+            app.BlockSettingsTab = uitab(app.TabGroup);
+            app.BlockSettingsTab.Title = 'Block Settings';
+
+            % Create BlockLengthsymbolsEditFieldLabel
+            app.BlockLengthsymbolsEditFieldLabel = uilabel(app.BlockSettingsTab);
+            app.BlockLengthsymbolsEditFieldLabel.Position = [60 238 130 22];
+            app.BlockLengthsymbolsEditFieldLabel.Text = 'Block Length (symbols)';
+
+            % Create BlockLengthsymbolsEditField
+            app.BlockLengthsymbolsEditField = uieditfield(app.BlockSettingsTab, 'numeric');
+            app.BlockLengthsymbolsEditField.Position = [238 238 100 22];
+            app.BlockLengthsymbolsEditField.Value = 2000;
+
+            % Create RandomSeedEditFieldLabel
+            app.RandomSeedEditFieldLabel = uilabel(app.BlockSettingsTab);
+            app.RandomSeedEditFieldLabel.Position = [58 202 82 22];
+            app.RandomSeedEditFieldLabel.Text = 'Random Seed';
+
+            % Create RandomSeedEditField
+            app.RandomSeedEditField = uieditfield(app.BlockSettingsTab, 'numeric');
+            app.RandomSeedEditField.Position = [238 202 100 22];
+            app.RandomSeedEditField.Value = 2369;
+
+            % Create SymbolRatesymssecEditFieldLabel
+            app.SymbolRatesymssecEditFieldLabel = uilabel(app.BlockSettingsTab);
+            app.SymbolRatesymssecEditFieldLabel.Position = [60 271 136 22];
+            app.SymbolRatesymssecEditFieldLabel.Text = 'Symbol Rate (syms/sec)';
+
+            % Create SymbolRatesymssecEditField
+            app.SymbolRatesymssecEditField = uieditfield(app.BlockSettingsTab, 'numeric');
+            app.SymbolRatesymssecEditField.Position = [238 271 100 22];
+            app.SymbolRatesymssecEditField.Value = 1000;
+
+            % Create ApplyTxCalibrationSwitchLabel
+            app.ApplyTxCalibrationSwitchLabel = uilabel(app.BlockSettingsTab);
+            app.ApplyTxCalibrationSwitchLabel.HorizontalAlignment = 'center';
+            app.ApplyTxCalibrationSwitchLabel.Position = [58 105 113 22];
+            app.ApplyTxCalibrationSwitchLabel.Text = 'Apply Tx Calibration';
+
+            % Create ApplyTxCalibrationSwitch
+            app.ApplyTxCalibrationSwitch = uiswitch(app.BlockSettingsTab, 'toggle');
+            app.ApplyTxCalibrationSwitch.Orientation = 'horizontal';
+            app.ApplyTxCalibrationSwitch.Position = [97 81 38 16];
+            app.ApplyTxCalibrationSwitch.Value = 'On';
+
+            % Create ApplyRxCalibrationSwitchLabel
+            app.ApplyRxCalibrationSwitchLabel = uilabel(app.BlockSettingsTab);
+            app.ApplyRxCalibrationSwitchLabel.HorizontalAlignment = 'center';
+            app.ApplyRxCalibrationSwitchLabel.Position = [226 105 118 22];
+            app.ApplyRxCalibrationSwitchLabel.Text = ' Apply Rx Calibration';
+
+            % Create ApplyRxCalibrationSwitch
+            app.ApplyRxCalibrationSwitch = uiswitch(app.BlockSettingsTab, 'toggle');
+            app.ApplyRxCalibrationSwitch.Orientation = 'horizontal';
+            app.ApplyRxCalibrationSwitch.Position = [266 82 38 16];
+            app.ApplyRxCalibrationSwitch.Value = 'On';
+
+            % Create SyncPreambleLengthDropDownLabel
+            app.SyncPreambleLengthDropDownLabel = uilabel(app.BlockSettingsTab);
+            app.SyncPreambleLengthDropDownLabel.Position = [58 166 127 22];
+            app.SyncPreambleLengthDropDownLabel.Text = 'Sync Preamble Length';
+
+            % Create SyncPreambleLengthDropDown
+            app.SyncPreambleLengthDropDown = uidropdown(app.BlockSettingsTab);
+            app.SyncPreambleLengthDropDown.Items = {'256', '512', '1024', '2048'};
+            app.SyncPreambleLengthDropDown.ItemsData = {'256', '512', '1024', '2048'};
+            app.SyncPreambleLengthDropDown.Position = [200 166 136 22];
+            app.SyncPreambleLengthDropDown.Value = '1024';
 
             % Create DeviceSettingsTab
             app.DeviceSettingsTab = uitab(app.TabGroup);
@@ -558,50 +624,54 @@ classdef mqamApp < matlab.apps.AppBase
 
             % Create ScopeDropDownLabel
             app.ScopeDropDownLabel = uilabel(app.DeviceSettingsTab);
-            app.ScopeDropDownLabel.Position = [19 366 43 22];
+            app.ScopeDropDownLabel.Position = [19 276 43 22];
             app.ScopeDropDownLabel.Text = 'Scope:';
 
             % Create ScopeDropDown
             app.ScopeDropDown = uidropdown(app.DeviceSettingsTab);
             app.ScopeDropDown.Items = {};
-            app.ScopeDropDown.Position = [77 366 304 22];
+            app.ScopeDropDown.Position = [77 276 304 22];
             app.ScopeDropDown.Value = {};
 
             % Create AWGDropDownLabel
             app.AWGDropDownLabel = uilabel(app.DeviceSettingsTab);
-            app.AWGDropDownLabel.Position = [19 285 34 22];
+            app.AWGDropDownLabel.Position = [19 195 34 22];
             app.AWGDropDownLabel.Text = 'AWG:';
 
             % Create AWGDropDown
             app.AWGDropDown = uidropdown(app.DeviceSettingsTab);
             app.AWGDropDown.Items = {};
-            app.AWGDropDown.Position = [77 285 304 22];
+            app.AWGDropDown.Position = [77 195 304 22];
             app.AWGDropDown.Value = {};
 
             % Create RefreshDeviceListButton
             app.RefreshDeviceListButton = uibutton(app.DeviceSettingsTab, 'push');
             app.RefreshDeviceListButton.ButtonPushedFcn = createCallbackFcn(app, @RefreshDeviceListButtonPushed, true);
-            app.RefreshDeviceListButton.Position = [138 90 120 22];
+            app.RefreshDeviceListButton.Position = [138 125 120 22];
             app.RefreshDeviceListButton.Text = 'Refresh Device List';
 
             % Create RefreshLamp
             app.RefreshLamp = uilamp(app.DeviceSettingsTab);
-            app.RefreshLamp.Position = [361 91 20 20];
+            app.RefreshLamp.Position = [361 29 20 20];
 
             % Create EnableSimulatorModeCheckBox
             app.EnableSimulatorModeCheckBox = uicheckbox(app.DeviceSettingsTab);
             app.EnableSimulatorModeCheckBox.ValueChangedFcn = createCallbackFcn(app, @EnableSimulatorModeCheckBoxValueChanged, true);
             app.EnableSimulatorModeCheckBox.Text = 'Enable Simulator Mode';
-            app.EnableSimulatorModeCheckBox.Position = [126 19 147 22];
+            app.EnableSimulatorModeCheckBox.Position = [126 28 147 22];
+
+            % Show the figure after all components are created
+            app.MQAMSystemv05UIFigure.Visible = 'on';
         end
     end
 
+    % App creation and deletion
     methods (Access = public)
 
         % Construct app
         function app = mqamApp
 
-            % Create and configure components
+            % Create UIFigure and components
             createComponents(app)
 
             % Register the app with App Designer
