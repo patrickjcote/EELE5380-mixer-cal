@@ -106,6 +106,7 @@ classdef mixerCalibration < matlab.apps.AppBase
     end
     
 
+    % Callbacks that handle component events
     methods (Access = private)
 
         % Code that executes after component creation
@@ -309,14 +310,14 @@ classdef mixerCalibration < matlab.apps.AppBase
         end
     end
 
-    % App initialization and construction
+    % Component initialization
     methods (Access = private)
 
         % Create UIFigure and components
         function createComponents(app)
 
-            % Create EMONATIMSMixerCalibrationv05UIFigure
-            app.EMONATIMSMixerCalibrationv05UIFigure = uifigure;
+            % Create EMONATIMSMixerCalibrationv05UIFigure and hide until all components are created
+            app.EMONATIMSMixerCalibrationv05UIFigure = uifigure('Visible', 'off');
             app.EMONATIMSMixerCalibrationv05UIFigure.Position = [100 100 397 291];
             app.EMONATIMSMixerCalibrationv05UIFigure.Name = 'EMONA TIMS Mixer Calibration v0.5';
 
@@ -425,15 +426,19 @@ classdef mixerCalibration < matlab.apps.AppBase
             app.VISADriverTypeEditField.HorizontalAlignment = 'center';
             app.VISADriverTypeEditField.Position = [-259 168 147 22];
             app.VISADriverTypeEditField.Value = 'KEYSIGHT';
+
+            % Show the figure after all components are created
+            app.EMONATIMSMixerCalibrationv05UIFigure.Visible = 'on';
         end
     end
 
+    % App creation and deletion
     methods (Access = public)
 
         % Construct app
         function app = mixerCalibration
 
-            % Create and configure components
+            % Create UIFigure and components
             createComponents(app)
 
             % Register the app with App Designer
