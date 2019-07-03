@@ -352,6 +352,7 @@ classdef mqamApp < matlab.apps.AppBase
             [encBlock, dataBits] = buildencBlock(app);
             txObj.encBits = encBlock;
             txObj.dataBits = dataBits;
+            ratesVec = [1/2 2/3 3/4 5/6];
             
             % Load Coding Scheme into Tx Object
             selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
@@ -360,14 +361,16 @@ classdef mqamApp < matlab.apps.AppBase
                     txObj.coding = 0;
                 case 'Convolutional'
                     txObj.coding = 1;
-                    txObj.rate = str2num(app.RateDropDown.Value); 
+                    txObj.rate = str2num(app.RateDropDown.Value);
+                    txObj.Nsyms = txObj.Nsyms/ratesVec(txObj.rate);
                 case 'LDPC'
                     txObj.blockLen = str2num(app.LDPCBlockLengthDropDown.Value);
-                    txObj.rate = str2num(app.RateDropDown.Value);       
+                    txObj.rate = str2num(app.RateDropDown.Value);
                     txObj.coding = 2;
+                    txObj.Nsyms = str2num(app.LDPCBlockLengthDropDown.Value)/(log2(txObj.M));
                 otherwise
             end
-                    
+                               
                     try
                         readMQAM(txObj,DSOVisaType,DSOVisaAddr);
                         app.Status.FontColor = [0.47 0.67 0.19];
