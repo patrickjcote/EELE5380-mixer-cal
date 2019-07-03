@@ -24,8 +24,6 @@ classdef mqamApp < matlab.apps.AppBase
         BlockSettingsTab               matlab.ui.container.Tab
         BlockLengthsymbolsEditFieldLabel  matlab.ui.control.Label
         BlockLengthsymbolsEditField    matlab.ui.control.NumericEditField
-        RandomSeedEditFieldLabel       matlab.ui.control.Label
-        RandomSeedEditField            matlab.ui.control.NumericEditField
         SymbolRatesymssecEditFieldLabel  matlab.ui.control.Label
         SymbolRatesymssecEditField     matlab.ui.control.NumericEditField
         ApplyTxCalibrationSwitchLabel  matlab.ui.control.Label
@@ -34,6 +32,8 @@ classdef mqamApp < matlab.apps.AppBase
         ApplyRxCalibrationSwitch       matlab.ui.control.ToggleSwitch
         SyncPreambleLengthDropDownLabel  matlab.ui.control.Label
         SyncPreambleLengthDropDown     matlab.ui.control.DropDown
+        RandomDataSeedDropDownLabel    matlab.ui.control.Label
+        RandomDataSeedDropDown         matlab.ui.control.DropDown
         DeviceSettingsTab              matlab.ui.container.Tab
         ScopeDropDownLabel             matlab.ui.control.Label
         ScopeDropDown                  matlab.ui.control.DropDown
@@ -130,7 +130,7 @@ classdef mqamApp < matlab.apps.AppBase
             
             M = str2num(app.QAMOrderDropDown.Value);
             N_syms = app.BlockLengthsymbolsEditField.Value;
-            rng_seed = app.RandomSeedEditField.Value;
+            rng_seed = str2num(app.RandomDataSeedDropDown.Value);
             
             switch selectedButton.Text
                 case 'None' % No channel coding
@@ -621,16 +621,6 @@ classdef mqamApp < matlab.apps.AppBase
             app.BlockLengthsymbolsEditField.Position = [238 238 100 22];
             app.BlockLengthsymbolsEditField.Value = 2000;
 
-            % Create RandomSeedEditFieldLabel
-            app.RandomSeedEditFieldLabel = uilabel(app.BlockSettingsTab);
-            app.RandomSeedEditFieldLabel.Position = [58 202 82 22];
-            app.RandomSeedEditFieldLabel.Text = 'Random Seed';
-
-            % Create RandomSeedEditField
-            app.RandomSeedEditField = uieditfield(app.BlockSettingsTab, 'numeric');
-            app.RandomSeedEditField.Position = [238 202 100 22];
-            app.RandomSeedEditField.Value = 2369;
-
             % Create SymbolRatesymssecEditFieldLabel
             app.SymbolRatesymssecEditFieldLabel = uilabel(app.BlockSettingsTab);
             app.SymbolRatesymssecEditFieldLabel.Position = [60 271 136 22];
@@ -667,15 +657,27 @@ classdef mqamApp < matlab.apps.AppBase
 
             % Create SyncPreambleLengthDropDownLabel
             app.SyncPreambleLengthDropDownLabel = uilabel(app.BlockSettingsTab);
-            app.SyncPreambleLengthDropDownLabel.Position = [58 166 127 22];
+            app.SyncPreambleLengthDropDownLabel.Position = [58 201 127 22];
             app.SyncPreambleLengthDropDownLabel.Text = 'Sync Preamble Length';
 
             % Create SyncPreambleLengthDropDown
             app.SyncPreambleLengthDropDown = uidropdown(app.BlockSettingsTab);
             app.SyncPreambleLengthDropDown.Items = {'256', '512', '1024', '2048'};
             app.SyncPreambleLengthDropDown.ItemsData = {'256', '512', '1024', '2048'};
-            app.SyncPreambleLengthDropDown.Position = [200 166 136 22];
+            app.SyncPreambleLengthDropDown.Position = [200 201 136 22];
             app.SyncPreambleLengthDropDown.Value = '1024';
+
+            % Create RandomDataSeedDropDownLabel
+            app.RandomDataSeedDropDownLabel = uilabel(app.BlockSettingsTab);
+            app.RandomDataSeedDropDownLabel.Position = [60 166 111 22];
+            app.RandomDataSeedDropDownLabel.Text = 'Random Data Seed';
+
+            % Create RandomDataSeedDropDown
+            app.RandomDataSeedDropDown = uidropdown(app.BlockSettingsTab);
+            app.RandomDataSeedDropDown.Items = {'A', 'B', 'C'};
+            app.RandomDataSeedDropDown.ItemsData = {'32164', '12345', '88888'};
+            app.RandomDataSeedDropDown.Position = [202 166 136 22];
+            app.RandomDataSeedDropDown.Value = '32164';
 
             % Create DeviceSettingsTab
             app.DeviceSettingsTab = uitab(app.TabGroup);
