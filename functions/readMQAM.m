@@ -15,6 +15,8 @@ function [] = readMQAM(rxObj,DSOVisaType,DSOVisaAddr)
 %       rxObj.coding    Coding type (0-none,1-BCC,2-LDPC)
 %       rxObj.blockLen  LDPC block length       [648,1296,1944]
 %       rxObj.rate      LDPC rate ndx ( 1-4)->[ 1/2, 2/3, 3/4, 5/6]
+%       rxObj.preM      Preamble m-seq order
+%       rxObj.preTaps   Preamble m-seq taps
 %
 %       DSOVisaType     VISA Instrument Type
 %                           1       - NI

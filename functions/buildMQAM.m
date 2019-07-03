@@ -28,6 +28,8 @@ try
     Fsym = txObj.Fsym;
     txBlock = txObj.encBits;
     TX_CAL = txObj.txCal;
+    preM = txObj.preM;
+    preTaps = txObj.preTaps;
 catch
     error('Tx Object not properly initialized.');
 end
@@ -58,13 +60,14 @@ end
 
 sps = 50;           % Samples per Symbol        [Samp/sym]
 
-%% Build Data Block and Modulate
-
-modBlock  = qammod(txBlock,M,'gray','InputType','bit','UnitAveragePower',true);
+%% Build BPSK Preamble and Modulated Data Block
+preamble = (mSeq(preM,preTaps)*2-1);               % Preamble M-sequence
+dataBlock  = qammod(txBlock,M,'gray','InputType','bit','UnitAveragePower',true);
+txBlock = [preamble,dataBlock];
 
 %% Build Output
-Qtx = rectpulse(imag(modBlock),sps);
-Itx = rectpulse(real(modBlock),sps);
+Qtx = rectpulse(imag(txBlock),sps);
+Itx = rectpulse(real(txBlock),sps);
 
 % Apply Transmitter Calibration Correction
 if TX_CAL
