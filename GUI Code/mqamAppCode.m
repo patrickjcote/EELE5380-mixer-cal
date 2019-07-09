@@ -203,7 +203,7 @@ classdef mqamApp < matlab.apps.AppBase
                     case 'None'
                         codeRate = 1;
                     otherwise
-                        ratesVec = [1/2 2/3 3/4 5/6];
+                        ratesVec = [1/2 2/3 3/4 5/6 1/3];
                         codeRate = ratesVec(str2num(app.RateDropDown.Value));
                 end
                 
@@ -377,7 +377,7 @@ classdef mqamApp < matlab.apps.AppBase
             [encBlock, dataBits] = buildencBlock(app);
             txObj.encBits = encBlock;
             txObj.dataBits = dataBits;
-            ratesVec = [1/2 2/3 3/4 5/6];
+            ratesVec = [1/2 2/3 3/4 5/6 1/3];
             
             % Load Coding Scheme into Tx Object
             selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
@@ -401,9 +401,9 @@ classdef mqamApp < matlab.apps.AppBase
                     txObj.itrs = app.DecodeIterationsEditField.Value;
                 otherwise
             end
-                          readMQAM(txObj,DSOVisaType,DSOVisaAddr);     
+                              
                     try
-                        
+                        readMQAM(txObj,DSOVisaType,DSOVisaAddr); 
                         app.Status.FontColor = [0.47 0.67 0.19];
                         app.Status.Text = 'Read Successful.';
                     catch ME
@@ -450,6 +450,9 @@ classdef mqamApp < matlab.apps.AppBase
         function ForwardErrorCorrectionButtonGroupSelectionChanged(app, event)
                 selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
                 
+                % Default Dropdown
+                app.RateDropDown.Items = {'1/2','2/3','3/4','5/6'};
+                app.RateDropDown.ItemsData = {'1', '2', '3', '4'};
                 switch selectedButton.Text
                     case 'None'
                         app.RateDropDown.Visible = 0;
@@ -467,6 +470,9 @@ classdef mqamApp < matlab.apps.AppBase
                         app.RateDropDown.Visible = 1;
                         app.RateDropDownLabel.Visible = 1;
                         app.BlockLengthDropDown.Editable = 0;
+                        app.RateDropDown.Editable = 0;
+                        app.RateDropDown.Items = {'1/3'};
+                        app.RateDropDown.ItemsData = {'5'};
                     otherwise
                         app.RateDropDown.Visible = 0;
                 end

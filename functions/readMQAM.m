@@ -175,7 +175,7 @@ else
         rxBits = convDecode(rxLLRs,rxObj.rate);
     elseif CODING == 2
         % LDPC decode
-        rxBits = ldpcDecode(rxLLRs,rxObj.blockLen,rxObj.rate);
+        rxBits = ldpcDecode(rxLLRs,rxObj.blockLen,rxObj.rate,itrs);
     elseif CODING == 3
         % turbo decode
         rxBits = turbDecode(rxLLRs,length(txBits),itrs);
