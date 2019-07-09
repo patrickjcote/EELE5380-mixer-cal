@@ -41,6 +41,7 @@ try
     preTaps = rxObj.preTaps;
     itrs = rxObj.itrs;
     readItrs = rxObj.readItrs;
+    SNRADD = rxObj.awgnSNR;
 
 catch
     error('Rx Object not properly initialized.');
@@ -109,6 +110,16 @@ for N_READ = 1:readItrs
         rxCor = Ainv*[(Irx-Idc)';(Qrx-Qdc)'];
         Irx = rxCor(1,:)'; Qrx = rxCor(2,:)';
     end
+    
+        %% Sim Mode Add SNR
+
+    if SNRADD<100
+        Crx = Irx + 1i*Qrx;
+        Crx = awgn(Crx,SNRADD-10,'measured');
+        Irx = real(Crx);
+        Qrx = imag(Crx);
+    end
+    
     
     %% AGC To Unity Power
     agc = mean(abs(Irx+1i*Qrx));
@@ -193,7 +204,7 @@ for N_READ = 1:readItrs
     %% Calculate BER
     
     errorStats = hErrors(txBits,rxBits);
-    if txBits ~= rxBits
+    if sum(txBits ~= rxBits)
         blockErrs = blockErrs+1;
     end
 end

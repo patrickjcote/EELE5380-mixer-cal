@@ -2,7 +2,7 @@ classdef mqamApp < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
-        MQAMSystemv05UIFigure           matlab.ui.Figure
+        MQAMSystemv075UIFigure          matlab.ui.Figure
         TabGroup                        matlab.ui.container.TabGroup
         TxRxTab                         matlab.ui.container.Tab
         SendButton                      matlab.ui.control.StateButton
@@ -21,8 +21,8 @@ classdef mqamApp < matlab.apps.AppBase
         DataRateTxt                     matlab.ui.control.Label
         BlockLengthDropDown             matlab.ui.control.DropDown
         BlockLengthDropDownLabel        matlab.ui.control.Label
-        BlocksDropDownLabel             matlab.ui.control.Label
-        BlocksDropDown                  matlab.ui.control.DropDown
+        ofBlocksDropDownLabel           matlab.ui.control.Label
+        ofBlocksDropDown                matlab.ui.control.DropDown
         BlockSettingsTab                matlab.ui.container.Tab
         SymbolRatesymssecEditFieldLabel  matlab.ui.control.Label
         SymbolRatesymssecEditField      matlab.ui.control.NumericEditField
@@ -36,6 +36,8 @@ classdef mqamApp < matlab.apps.AppBase
         RandomDataSeedDropDown          matlab.ui.control.DropDown
         DecodeIterationsEditFieldLabel  matlab.ui.control.Label
         DecodeIterationsEditField       matlab.ui.control.NumericEditField
+        SimulatedAWGNSNREditFieldLabel  matlab.ui.control.Label
+        SimulatedAWGNSNREditField       matlab.ui.control.NumericEditField
         DeviceSettingsTab               matlab.ui.container.Tab
         ScopeDropDownLabel              matlab.ui.control.Label
         ScopeDropDown                   matlab.ui.control.DropDown
@@ -320,8 +322,8 @@ classdef mqamApp < matlab.apps.AppBase
             app.SendButton.Value = 0;
             
             % Disable/Enable visablity to bring app window back to the foreground
-            app.MQAMSystemv05UIFigure.Visible = 0;
-            app.MQAMSystemv05UIFigure.Visible = 1;
+            app.MQAMSystemv075UIFigure.Visible = 0;
+            app.MQAMSystemv075UIFigure.Visible = 1;
             
         end
 
@@ -355,7 +357,8 @@ classdef mqamApp < matlab.apps.AppBase
             txObj.rxCal = RX_CAL;
             txObj.M = str2num(app.QAMOrderDropDown.Value);
             txObj.itrs = app.DecodeIterationsEditField.Value;
-            txObj.readItrs = str2num(app.BlocksDropDown.Value);
+            txObj.readItrs = str2num(app.ofBlocksDropDown.Value);
+            txObj.awgnSNR = app.SimulatedAWGNSNREditField.Value;
 
             
             % Load Preamble Length, Set M-seq order and taps
@@ -420,8 +423,8 @@ classdef mqamApp < matlab.apps.AppBase
                     app.ReadButton.Value = 0;
                     
             % Disable/Enable visablity to bring app window back to the foreground
-            app.MQAMSystemv05UIFigure.Visible = 0;
-            app.MQAMSystemv05UIFigure.Visible = 1;
+            app.MQAMSystemv075UIFigure.Visible = 0;
+            app.MQAMSystemv075UIFigure.Visible = 1;
         end
 
         % Button pushed function: RefreshDeviceListButton
@@ -509,14 +512,14 @@ classdef mqamApp < matlab.apps.AppBase
         % Create UIFigure and components
         function createComponents(app)
 
-            % Create MQAMSystemv05UIFigure and hide until all components are created
-            app.MQAMSystemv05UIFigure = uifigure('Visible', 'off');
-            app.MQAMSystemv05UIFigure.Position = [100 100 396 370];
-            app.MQAMSystemv05UIFigure.Name = 'M-QAM System - v0.5';
-            app.MQAMSystemv05UIFigure.Resize = 'off';
+            % Create MQAMSystemv075UIFigure and hide until all components are created
+            app.MQAMSystemv075UIFigure = uifigure('Visible', 'off');
+            app.MQAMSystemv075UIFigure.Position = [100 100 396 370];
+            app.MQAMSystemv075UIFigure.Name = 'M-QAM System - v0.75';
+            app.MQAMSystemv075UIFigure.Resize = 'off';
 
             % Create TabGroup
-            app.TabGroup = uitabgroup(app.MQAMSystemv05UIFigure);
+            app.TabGroup = uitabgroup(app.MQAMSystemv075UIFigure);
             app.TabGroup.Position = [1 -8 397 379];
 
             % Create TxRxTab
@@ -527,13 +530,13 @@ classdef mqamApp < matlab.apps.AppBase
             app.SendButton = uibutton(app.TxRxTab, 'state');
             app.SendButton.ValueChangedFcn = createCallbackFcn(app, @SendButtonValueChanged, true);
             app.SendButton.Text = 'Send';
-            app.SendButton.Position = [60 46 100 22];
+            app.SendButton.Position = [48 47 100 22];
 
             % Create ReadButton
             app.ReadButton = uibutton(app.TxRxTab, 'state');
             app.ReadButton.ValueChangedFcn = createCallbackFcn(app, @ReadButtonValueChanged, true);
             app.ReadButton.Text = 'Read';
-            app.ReadButton.Position = [209 46 100 22];
+            app.ReadButton.Position = [195 47 100 22];
 
             % Create QAMOrderDropDownLabel
             app.QAMOrderDropDownLabel = uilabel(app.TxRxTab);
@@ -619,18 +622,18 @@ classdef mqamApp < matlab.apps.AppBase
             app.BlockLengthDropDownLabel.Position = [31 266 134 22];
             app.BlockLengthDropDownLabel.Text = 'Total Block Length (bits)';
 
-            % Create BlocksDropDownLabel
-            app.BlocksDropDownLabel = uilabel(app.TxRxTab);
-            app.BlocksDropDownLabel.Position = [322 67 44 22];
-            app.BlocksDropDownLabel.Text = 'Blocks:';
+            % Create ofBlocksDropDownLabel
+            app.ofBlocksDropDownLabel = uilabel(app.TxRxTab);
+            app.ofBlocksDropDownLabel.Position = [304 67 68 22];
+            app.ofBlocksDropDownLabel.Text = '# of Blocks:';
 
-            % Create BlocksDropDown
-            app.BlocksDropDown = uidropdown(app.TxRxTab);
-            app.BlocksDropDown.Items = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '10'};
-            app.BlocksDropDown.Editable = 'on';
-            app.BlocksDropDown.BackgroundColor = [1 1 1];
-            app.BlocksDropDown.Position = [320 46 48 22];
-            app.BlocksDropDown.Value = '1';
+            % Create ofBlocksDropDown
+            app.ofBlocksDropDown = uidropdown(app.TxRxTab);
+            app.ofBlocksDropDown.Items = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '10'};
+            app.ofBlocksDropDown.Editable = 'on';
+            app.ofBlocksDropDown.BackgroundColor = [1 1 1];
+            app.ofBlocksDropDown.Position = [304 46 64 22];
+            app.ofBlocksDropDown.Value = '1';
 
             % Create BlockSettingsTab
             app.BlockSettingsTab = uitab(app.TabGroup);
@@ -649,25 +652,25 @@ classdef mqamApp < matlab.apps.AppBase
             % Create ApplyTxCalibrationSwitchLabel
             app.ApplyTxCalibrationSwitchLabel = uilabel(app.BlockSettingsTab);
             app.ApplyTxCalibrationSwitchLabel.HorizontalAlignment = 'center';
-            app.ApplyTxCalibrationSwitchLabel.Position = [58 105 113 22];
+            app.ApplyTxCalibrationSwitchLabel.Position = [55 51 113 22];
             app.ApplyTxCalibrationSwitchLabel.Text = 'Apply Tx Calibration';
 
             % Create ApplyTxCalibrationSwitch
             app.ApplyTxCalibrationSwitch = uiswitch(app.BlockSettingsTab, 'toggle');
             app.ApplyTxCalibrationSwitch.Orientation = 'horizontal';
-            app.ApplyTxCalibrationSwitch.Position = [97 81 38 16];
+            app.ApplyTxCalibrationSwitch.Position = [94 27 38 16];
             app.ApplyTxCalibrationSwitch.Value = 'On';
 
             % Create ApplyRxCalibrationSwitchLabel
             app.ApplyRxCalibrationSwitchLabel = uilabel(app.BlockSettingsTab);
             app.ApplyRxCalibrationSwitchLabel.HorizontalAlignment = 'center';
-            app.ApplyRxCalibrationSwitchLabel.Position = [226 105 118 22];
+            app.ApplyRxCalibrationSwitchLabel.Position = [223 51 118 22];
             app.ApplyRxCalibrationSwitchLabel.Text = ' Apply Rx Calibration';
 
             % Create ApplyRxCalibrationSwitch
             app.ApplyRxCalibrationSwitch = uiswitch(app.BlockSettingsTab, 'toggle');
             app.ApplyRxCalibrationSwitch.Orientation = 'horizontal';
-            app.ApplyRxCalibrationSwitch.Position = [266 82 38 16];
+            app.ApplyRxCalibrationSwitch.Position = [263 28 38 16];
             app.ApplyRxCalibrationSwitch.Value = 'On';
 
             % Create SyncPreambleLengthDropDownLabel
@@ -703,6 +706,16 @@ classdef mqamApp < matlab.apps.AppBase
             app.DecodeIterationsEditField = uieditfield(app.BlockSettingsTab, 'numeric');
             app.DecodeIterationsEditField.Position = [240 148 100 22];
             app.DecodeIterationsEditField.Value = 15;
+
+            % Create SimulatedAWGNSNREditFieldLabel
+            app.SimulatedAWGNSNREditFieldLabel = uilabel(app.BlockSettingsTab);
+            app.SimulatedAWGNSNREditFieldLabel.Position = [63 107 128 22];
+            app.SimulatedAWGNSNREditFieldLabel.Text = 'Simulated AWGN SNR';
+
+            % Create SimulatedAWGNSNREditField
+            app.SimulatedAWGNSNREditField = uieditfield(app.BlockSettingsTab, 'numeric');
+            app.SimulatedAWGNSNREditField.Position = [241 107 100 22];
+            app.SimulatedAWGNSNREditField.Value = 100;
 
             % Create DeviceSettingsTab
             app.DeviceSettingsTab = uitab(app.TabGroup);
@@ -747,7 +760,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.EnableSimulatorModeCheckBox.Position = [126 28 147 22];
 
             % Show the figure after all components are created
-            app.MQAMSystemv05UIFigure.Visible = 'on';
+            app.MQAMSystemv075UIFigure.Visible = 'on';
         end
     end
 
@@ -761,7 +774,7 @@ classdef mqamApp < matlab.apps.AppBase
             createComponents(app)
 
             % Register the app with App Designer
-            registerApp(app, app.MQAMSystemv05UIFigure)
+            registerApp(app, app.MQAMSystemv075UIFigure)
 
             % Execute the startup function
             runStartupFcn(app, @startupFcn)
@@ -775,7 +788,7 @@ classdef mqamApp < matlab.apps.AppBase
         function delete(app)
 
             % Delete UIFigure when app is deleted
-            delete(app.MQAMSystemv05UIFigure)
+            delete(app.MQAMSystemv075UIFigure)
         end
     end
 end
