@@ -28,7 +28,7 @@ function [] = buildMQAM(txObj,filtType,AWGVisaType,AWGVisaAddress)
 try
     M = txObj.M;
     Fsym = txObj.Fsym;
-    txBlock = txObj.encBits;
+    encBits = txObj.encBits;
     TX_CAL = txObj.txCal;
     preM = txObj.preM;
     preTaps = txObj.preTaps;
@@ -59,12 +59,21 @@ if isnumeric(AWGVisaType)
     end
 end
 
-
-sps = 5;           % Samples per Symbol        [Samp/sym]
+sps = 10;           % Samples per Symbol        [Samp/sym]
 
 %% Build BPSK Preamble and Modulated Data Block
 preamble = ([mSeq(preM,preTaps);1]*2-1);               % Preamble M-sequence
-dataBlock  = qammod(txBlock,M,'gray','InputType','bit','UnitAveragePower',true);
+
+% Add padding
+if(mod(length(encBits),log2(M)))
+    padBits = log2(M)-mod(length(encBits),log2(M))
+else
+    padBits = 0
+end
+
+txBits = [encBits; randi([0 1], padBits,1)];
+
+dataBlock  = qammod(txBits,M,'gray','InputType','bit','UnitAveragePower',true);
 txBlock = [preamble;dataBlock];
 
 %% Build Output

@@ -2,46 +2,46 @@ classdef mqamApp < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
-        MQAMSystemv05UIFigure          matlab.ui.Figure
-        TabGroup                       matlab.ui.container.TabGroup
-        TxRxTab                        matlab.ui.container.Tab
-        SendButton                     matlab.ui.control.StateButton
-        ReadButton                     matlab.ui.control.StateButton
-        QAMOrderDropDownLabel          matlab.ui.control.Label
-        QAMOrderDropDown               matlab.ui.control.DropDown
-        Status                         matlab.ui.control.Label
+        MQAMSystemv05UIFigure           matlab.ui.Figure
+        TabGroup                        matlab.ui.container.TabGroup
+        TxRxTab                         matlab.ui.container.Tab
+        SendButton                      matlab.ui.control.StateButton
+        ReadButton                      matlab.ui.control.StateButton
+        QAMOrderDropDownLabel           matlab.ui.control.Label
+        QAMOrderDropDown                matlab.ui.control.DropDown
+        Status                          matlab.ui.control.Label
         ForwardErrorCorrectionButtonGroup  matlab.ui.container.ButtonGroup
-        NoneButton                     matlab.ui.control.RadioButton
-        ConvolutionalButton            matlab.ui.control.RadioButton
-        LDPCButton                     matlab.ui.control.RadioButton
-        RateDropDown                   matlab.ui.control.DropDown
-        LDPCBlockLengthDropDown        matlab.ui.control.DropDown
-        LDPCBlockLengthDropDownLabel   matlab.ui.control.Label
-        RateDropDownLabel              matlab.ui.control.Label
-        TurboButton                    matlab.ui.control.RadioButton
-        DataRateLabel                  matlab.ui.control.Label
-        DataRateTxt                    matlab.ui.control.Label
-        BlockSettingsTab               matlab.ui.container.Tab
-        BlockLengthsymbolsEditFieldLabel  matlab.ui.control.Label
-        BlockLengthsymbolsEditField    matlab.ui.control.NumericEditField
+        NoneButton                      matlab.ui.control.RadioButton
+        ConvolutionalButton             matlab.ui.control.RadioButton
+        LDPCButton                      matlab.ui.control.RadioButton
+        RateDropDown                    matlab.ui.control.DropDown
+        RateDropDownLabel               matlab.ui.control.Label
+        TurboButton                     matlab.ui.control.RadioButton
+        DataRateLabel                   matlab.ui.control.Label
+        DataRateTxt                     matlab.ui.control.Label
+        BlockLengthDropDown             matlab.ui.control.DropDown
+        BlockLengthDropDownLabel        matlab.ui.control.Label
+        BlockSettingsTab                matlab.ui.container.Tab
         SymbolRatesymssecEditFieldLabel  matlab.ui.control.Label
-        SymbolRatesymssecEditField     matlab.ui.control.NumericEditField
-        ApplyTxCalibrationSwitchLabel  matlab.ui.control.Label
-        ApplyTxCalibrationSwitch       matlab.ui.control.ToggleSwitch
-        ApplyRxCalibrationSwitchLabel  matlab.ui.control.Label
-        ApplyRxCalibrationSwitch       matlab.ui.control.ToggleSwitch
+        SymbolRatesymssecEditField      matlab.ui.control.NumericEditField
+        ApplyTxCalibrationSwitchLabel   matlab.ui.control.Label
+        ApplyTxCalibrationSwitch        matlab.ui.control.ToggleSwitch
+        ApplyRxCalibrationSwitchLabel   matlab.ui.control.Label
+        ApplyRxCalibrationSwitch        matlab.ui.control.ToggleSwitch
         SyncPreambleLengthDropDownLabel  matlab.ui.control.Label
-        SyncPreambleLengthDropDown     matlab.ui.control.DropDown
-        RandomDataSeedDropDownLabel    matlab.ui.control.Label
-        RandomDataSeedDropDown         matlab.ui.control.DropDown
-        DeviceSettingsTab              matlab.ui.container.Tab
-        ScopeDropDownLabel             matlab.ui.control.Label
-        ScopeDropDown                  matlab.ui.control.DropDown
-        AWGDropDownLabel               matlab.ui.control.Label
-        AWGDropDown                    matlab.ui.control.DropDown
-        RefreshDeviceListButton        matlab.ui.control.Button
-        RefreshLamp                    matlab.ui.control.Lamp
-        EnableSimulatorModeCheckBox    matlab.ui.control.CheckBox
+        SyncPreambleLengthDropDown      matlab.ui.control.DropDown
+        RandomDataSeedDropDownLabel     matlab.ui.control.Label
+        RandomDataSeedDropDown          matlab.ui.control.DropDown
+        DecodeIterationsEditFieldLabel  matlab.ui.control.Label
+        DecodeIterationsEditField       matlab.ui.control.NumericEditField
+        DeviceSettingsTab               matlab.ui.container.Tab
+        ScopeDropDownLabel              matlab.ui.control.Label
+        ScopeDropDown                   matlab.ui.control.DropDown
+        AWGDropDownLabel                matlab.ui.control.Label
+        AWGDropDown                     matlab.ui.control.DropDown
+        RefreshDeviceListButton         matlab.ui.control.Button
+        RefreshLamp                     matlab.ui.control.Lamp
+        EnableSimulatorModeCheckBox     matlab.ui.control.CheckBox
     end
 
     
@@ -129,13 +129,12 @@ classdef mqamApp < matlab.apps.AppBase
             selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
             
             M = str2num(app.QAMOrderDropDown.Value);
-            N_syms = app.BlockLengthsymbolsEditField.Value;
             rng_seed = str2num(app.RandomDataSeedDropDown.Value);
-            
+            blockLen = str2num(app.BlockLengthDropDown.Value);
             switch selectedButton.Text
                 case 'None' % No channel coding
                     rng(rng_seed);          % Random Seed
-                    dataBits = randi([0 1],log2(M)*N_syms,1);
+                    dataBits = randi([0 1],blockLen,1);
                     encBlock = dataBits;
                 case 'Convolutional'
                     % Convolutional Coding
@@ -153,7 +152,7 @@ classdef mqamApp < matlab.apps.AppBase
                             r = 1/2;
                     end
                     
-                    NdataBits = log2(M)*N_syms;
+                    NdataBits = blockLen*r;
                     rng(rng_seed);          % Random Seed
                     dataBits = randi([0 1],NdataBits,1);
                     % Tail bits to flush the encoder
@@ -162,12 +161,13 @@ classdef mqamApp < matlab.apps.AppBase
 
                         
                 case 'LDPC'
-                    blockLen = str2num(app.LDPCBlockLengthDropDown.Value);
                     rate = str2num(app.RateDropDown.Value);
                     [encBlock, dataBits] = ldpcEncode(blockLen,rate,rng_seed);
+                case 'Turbo'
+                    [encBlock, dataBits] = turbEncode(round((blockLen-12)/3),rng_seed);
                 otherwise
                     rng(rng_seed);          % Random Seed
-                    dataBits = randi([0 1],log2(M)*N_syms,1);
+                    dataBits = randi([0 1],blockLen,1);
                     encBlock = dataBits;
             end
             
@@ -226,8 +226,9 @@ classdef mqamApp < matlab.apps.AppBase
             % Initialize Channel Coding
             app.RateDropDown.Visible = 0;
             app.RateDropDownLabel.Visible = 0;
-            app.LDPCBlockLengthDropDown.Visible = 0;
-            app.LDPCBlockLengthDropDownLabel.Visible = 0;
+            app.BlockLengthDropDown.Visible = 1;
+            app.BlockLengthDropDownLabel.Visible = 1;
+            app.BlockLengthDropDown.Editable = 1;
             
             % Set Lamp
             app.RefreshLamp.Color = 'Yellow';
@@ -264,7 +265,6 @@ classdef mqamApp < matlab.apps.AppBase
             
             % Load Tx Object
             txObj.Fsym = app.SymbolRatesymssecEditField.Value;
-            txObj.Nsyms = app.BlockLengthsymbolsEditField.Value;
             
             try
                 [encBlock, dataBits] = buildencBlock(app);
@@ -281,6 +281,7 @@ classdef mqamApp < matlab.apps.AppBase
             txObj.dataBits = dataBits;
             txObj.txCal = TX_CAL;
             txObj.M = str2num(app.QAMOrderDropDown.Value);
+            txObj.itrs = app.DecodeIterationsEditField.Value;
             
             % Load Preamble Length, Set M-seq order and taps
             switch str2num(app.SyncPreambleLengthDropDown.Value)
@@ -349,9 +350,9 @@ classdef mqamApp < matlab.apps.AppBase
             
             % Load Tx Object
             txObj.Fsym = app.SymbolRatesymssecEditField.Value;
-            txObj.Nsyms = app.BlockLengthsymbolsEditField.Value;
             txObj.rxCal = RX_CAL;
             txObj.M = str2num(app.QAMOrderDropDown.Value);
+            txObj.itrs = app.DecodeIterationsEditField.Value;
             
             % Load Preamble Length, Set M-seq order and taps
             switch str2num(app.SyncPreambleLengthDropDown.Value)
@@ -383,20 +384,26 @@ classdef mqamApp < matlab.apps.AppBase
             switch selectedButton.Text
                 case 'None' % No channel coding
                     txObj.coding = 0;
+                    txObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(txObj.M)));
                 case 'Convolutional'
                     txObj.coding = 1;
                     txObj.rate = str2num(app.RateDropDown.Value);
-                    txObj.Nsyms = txObj.Nsyms/ratesVec(txObj.rate);
+                    txObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(txObj.M)));
                 case 'LDPC'
-                    txObj.blockLen = str2num(app.LDPCBlockLengthDropDown.Value);
+                    txObj.blockLen = str2num(app.BlockLengthDropDown.Value);
                     txObj.rate = str2num(app.RateDropDown.Value);
                     txObj.coding = 2;
-                    txObj.Nsyms = str2num(app.LDPCBlockLengthDropDown.Value)/(log2(txObj.M));
+                    txObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(txObj.M)));
+                case 'Turbo'
+                    txObj.coding = 3;
+                    txObj.rate = str2num(app.RateDropDown.Value);
+                    txObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(txObj.M)));
+                    txObj.itrs = app.DecodeIterationsEditField.Value;
                 otherwise
             end
-                               
+                          readMQAM(txObj,DSOVisaType,DSOVisaAddr);     
                     try
-                        readMQAM(txObj,DSOVisaType,DSOVisaAddr);
+                        
                         app.Status.FontColor = [0.47 0.67 0.19];
                         app.Status.Text = 'Read Successful.';
                     catch ME
@@ -447,24 +454,21 @@ classdef mqamApp < matlab.apps.AppBase
                     case 'None'
                         app.RateDropDown.Visible = 0;
                         app.RateDropDownLabel.Visible = 0;
-                        app.LDPCBlockLengthDropDown.Visible = 0;
-                        app.LDPCBlockLengthDropDownLabel.Visible = 0;
-                        app.BlockLengthsymbolsEditField.Enable = 1;
+                        app.BlockLengthDropDown.Editable = 1;
                     case 'Convolutional'
                         app.RateDropDown.Visible = 1;
                         app.RateDropDownLabel.Visible = 1;
-                        app.LDPCBlockLengthDropDown.Visible = 0;
-                        app.LDPCBlockLengthDropDownLabel.Visible = 0;
-                        app.BlockLengthsymbolsEditField.Enable = 1;
+                        app.BlockLengthDropDown.Editable = 1;
                     case 'LDPC'
                         app.RateDropDown.Visible = 1;
                         app.RateDropDownLabel.Visible = 1;
-                        app.LDPCBlockLengthDropDown.Visible = 1;
-                        app.LDPCBlockLengthDropDownLabel.Visible = 1;
-                        app.BlockLengthsymbolsEditField.Enable = 0;
+                        app.BlockLengthDropDown.Editable = 0;
+                    case 'Turbo'
+                        app.RateDropDown.Visible = 1;
+                        app.RateDropDownLabel.Visible = 1;
+                        app.BlockLengthDropDown.Editable = 0;
                     otherwise
                         app.RateDropDown.Visible = 0;
-                        app.LDPCBlockLengthDropDown.Visible = 0;
                 end
                 
                 calcDataRate(app);
@@ -483,8 +487,8 @@ classdef mqamApp < matlab.apps.AppBase
             
         end
 
-        % Value changed function: LDPCBlockLengthDropDown
-        function LDPCBlockLengthDropDownValueChanged(app, event)
+        % Value changed function: BlockLengthDropDown
+        function BlockLengthDropDownValueChanged(app, event)
             calcDataRate(app);
         end
     end
@@ -513,17 +517,17 @@ classdef mqamApp < matlab.apps.AppBase
             app.SendButton = uibutton(app.TxRxTab, 'state');
             app.SendButton.ValueChangedFcn = createCallbackFcn(app, @SendButtonValueChanged, true);
             app.SendButton.Text = 'Send';
-            app.SendButton.Position = [60 55 100 22];
+            app.SendButton.Position = [60 46 100 22];
 
             % Create ReadButton
             app.ReadButton = uibutton(app.TxRxTab, 'state');
             app.ReadButton.ValueChangedFcn = createCallbackFcn(app, @ReadButtonValueChanged, true);
             app.ReadButton.Text = 'Read';
-            app.ReadButton.Position = [239 55 100 22];
+            app.ReadButton.Position = [239 46 100 22];
 
             % Create QAMOrderDropDownLabel
             app.QAMOrderDropDownLabel = uilabel(app.TxRxTab);
-            app.QAMOrderDropDownLabel.Position = [60 307 67 22];
+            app.QAMOrderDropDownLabel.Position = [31 301 67 22];
             app.QAMOrderDropDownLabel.Text = 'QAM Order';
 
             % Create QAMOrderDropDown
@@ -532,7 +536,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.QAMOrderDropDown.Editable = 'on';
             app.QAMOrderDropDown.ValueChangedFcn = createCallbackFcn(app, @QAMOrderDropDownValueChanged, true);
             app.QAMOrderDropDown.BackgroundColor = [1 1 1];
-            app.QAMOrderDropDown.Position = [194 307 144 22];
+            app.QAMOrderDropDown.Position = [239 301 125 22];
             app.QAMOrderDropDown.Value = '4';
 
             % Create Status
@@ -545,7 +549,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.ForwardErrorCorrectionButtonGroup = uibuttongroup(app.TxRxTab);
             app.ForwardErrorCorrectionButtonGroup.SelectionChangedFcn = createCallbackFcn(app, @ForwardErrorCorrectionButtonGroupSelectionChanged, true);
             app.ForwardErrorCorrectionButtonGroup.Title = 'Forward Error Correction';
-            app.ForwardErrorCorrectionButtonGroup.Position = [29 163 338 123];
+            app.ForwardErrorCorrectionButtonGroup.Position = [30 133 338 123];
 
             % Create NoneButton
             app.NoneButton = uiradiobutton(app.ForwardErrorCorrectionButtonGroup);
@@ -568,67 +572,55 @@ classdef mqamApp < matlab.apps.AppBase
             app.RateDropDown.Items = {'1/2', '2/3', '3/4', '5/6'};
             app.RateDropDown.ItemsData = {'1', '2', '3', '4'};
             app.RateDropDown.ValueChangedFcn = createCallbackFcn(app, @RateDropDownValueChanged, true);
-            app.RateDropDown.Position = [226 76 100 22];
+            app.RateDropDown.Position = [219 41 100 22];
             app.RateDropDown.Value = '1';
-
-            % Create LDPCBlockLengthDropDown
-            app.LDPCBlockLengthDropDown = uidropdown(app.ForwardErrorCorrectionButtonGroup);
-            app.LDPCBlockLengthDropDown.Items = {'648', '1296', '1944'};
-            app.LDPCBlockLengthDropDown.ItemsData = {'648', '1296', '1944'};
-            app.LDPCBlockLengthDropDown.ValueChangedFcn = createCallbackFcn(app, @LDPCBlockLengthDropDownValueChanged, true);
-            app.LDPCBlockLengthDropDown.Position = [226 34 100 22];
-            app.LDPCBlockLengthDropDown.Value = '648';
-
-            % Create LDPCBlockLengthDropDownLabel
-            app.LDPCBlockLengthDropDownLabel = uilabel(app.ForwardErrorCorrectionButtonGroup);
-            app.LDPCBlockLengthDropDownLabel.HorizontalAlignment = 'right';
-            app.LDPCBlockLengthDropDownLabel.Position = [142 33 75 22];
-            app.LDPCBlockLengthDropDownLabel.Text = 'Block Length';
 
             % Create RateDropDownLabel
             app.RateDropDownLabel = uilabel(app.ForwardErrorCorrectionButtonGroup);
             app.RateDropDownLabel.HorizontalAlignment = 'right';
-            app.RateDropDownLabel.Position = [180 76 31 22];
-            app.RateDropDownLabel.Text = 'Rate';
+            app.RateDropDownLabel.Position = [143 41 66 22];
+            app.RateDropDownLabel.Text = 'Code Rate:';
 
             % Create TurboButton
             app.TurboButton = uiradiobutton(app.ForwardErrorCorrectionButtonGroup);
-            app.TurboButton.Enable = 'off';
             app.TurboButton.Text = 'Turbo';
             app.TurboButton.Position = [11 12 65 22];
 
             % Create DataRateLabel
             app.DataRateLabel = uilabel(app.TxRxTab);
-            app.DataRateLabel.Position = [29 128 63 22];
+            app.DataRateLabel.Position = [30 98 63 22];
             app.DataRateLabel.Text = 'Data Rate:';
 
             % Create DataRateTxt
             app.DataRateTxt = uilabel(app.TxRxTab);
-            app.DataRateTxt.Position = [104 128 91 22];
+            app.DataRateTxt.Position = [105 98 91 22];
             app.DataRateTxt.Text = '';
+
+            % Create BlockLengthDropDown
+            app.BlockLengthDropDown = uidropdown(app.TxRxTab);
+            app.BlockLengthDropDown.Items = {'648', '1296', '1944'};
+            app.BlockLengthDropDown.ItemsData = {'648', '1296', '1944'};
+            app.BlockLengthDropDown.ValueChangedFcn = createCallbackFcn(app, @BlockLengthDropDownValueChanged, true);
+            app.BlockLengthDropDown.Position = [233 266 131 22];
+            app.BlockLengthDropDown.Value = '648';
+
+            % Create BlockLengthDropDownLabel
+            app.BlockLengthDropDownLabel = uilabel(app.TxRxTab);
+            app.BlockLengthDropDownLabel.Position = [31 266 134 22];
+            app.BlockLengthDropDownLabel.Text = 'Total Block Length (bits)';
 
             % Create BlockSettingsTab
             app.BlockSettingsTab = uitab(app.TabGroup);
             app.BlockSettingsTab.Title = 'Block Settings';
 
-            % Create BlockLengthsymbolsEditFieldLabel
-            app.BlockLengthsymbolsEditFieldLabel = uilabel(app.BlockSettingsTab);
-            app.BlockLengthsymbolsEditFieldLabel.Position = [60 238 130 22];
-            app.BlockLengthsymbolsEditFieldLabel.Text = 'Block Length (symbols)';
-
-            % Create BlockLengthsymbolsEditField
-            app.BlockLengthsymbolsEditField = uieditfield(app.BlockSettingsTab, 'numeric');
-            app.BlockLengthsymbolsEditField.Position = [238 238 100 22];
-            app.BlockLengthsymbolsEditField.Value = 2000;
-
             % Create SymbolRatesymssecEditFieldLabel
             app.SymbolRatesymssecEditFieldLabel = uilabel(app.BlockSettingsTab);
-            app.SymbolRatesymssecEditFieldLabel.Position = [60 271 136 22];
+            app.SymbolRatesymssecEditFieldLabel.Position = [60 277 136 22];
             app.SymbolRatesymssecEditFieldLabel.Text = 'Symbol Rate (syms/sec)';
 
             % Create SymbolRatesymssecEditField
             app.SymbolRatesymssecEditField = uieditfield(app.BlockSettingsTab, 'numeric');
-            app.SymbolRatesymssecEditField.Position = [238 271 100 22];
+            app.SymbolRatesymssecEditField.Position = [238 277 100 22];
             app.SymbolRatesymssecEditField.Value = 1000;
 
             % Create ApplyTxCalibrationSwitchLabel
@@ -657,27 +649,37 @@ classdef mqamApp < matlab.apps.AppBase
 
             % Create SyncPreambleLengthDropDownLabel
             app.SyncPreambleLengthDropDownLabel = uilabel(app.BlockSettingsTab);
-            app.SyncPreambleLengthDropDownLabel.Position = [58 201 127 22];
+            app.SyncPreambleLengthDropDownLabel.Position = [62 235 127 22];
             app.SyncPreambleLengthDropDownLabel.Text = 'Sync Preamble Length';
 
             % Create SyncPreambleLengthDropDown
             app.SyncPreambleLengthDropDown = uidropdown(app.BlockSettingsTab);
             app.SyncPreambleLengthDropDown.Items = {'256', '512', '1024', '2048'};
             app.SyncPreambleLengthDropDown.ItemsData = {'256', '512', '1024', '2048'};
-            app.SyncPreambleLengthDropDown.Position = [200 201 136 22];
+            app.SyncPreambleLengthDropDown.Position = [204 235 136 22];
             app.SyncPreambleLengthDropDown.Value = '1024';
 
             % Create RandomDataSeedDropDownLabel
             app.RandomDataSeedDropDownLabel = uilabel(app.BlockSettingsTab);
-            app.RandomDataSeedDropDownLabel.Position = [60 166 111 22];
+            app.RandomDataSeedDropDownLabel.Position = [62 191 111 22];
             app.RandomDataSeedDropDownLabel.Text = 'Random Data Seed';
 
             % Create RandomDataSeedDropDown
             app.RandomDataSeedDropDown = uidropdown(app.BlockSettingsTab);
             app.RandomDataSeedDropDown.Items = {'A', 'B', 'C'};
             app.RandomDataSeedDropDown.ItemsData = {'32164', '12345', '88888'};
-            app.RandomDataSeedDropDown.Position = [202 166 136 22];
+            app.RandomDataSeedDropDown.Position = [204 191 136 22];
             app.RandomDataSeedDropDown.Value = '32164';
+
+            % Create DecodeIterationsEditFieldLabel
+            app.DecodeIterationsEditFieldLabel = uilabel(app.BlockSettingsTab);
+            app.DecodeIterationsEditFieldLabel.Position = [62 148 100 22];
+            app.DecodeIterationsEditFieldLabel.Text = 'Decode Iterations';
+
+            % Create DecodeIterationsEditField
+            app.DecodeIterationsEditField = uieditfield(app.BlockSettingsTab, 'numeric');
+            app.DecodeIterationsEditField.Position = [240 148 100 22];
+            app.DecodeIterationsEditField.Value = 15;
 
             % Create DeviceSettingsTab
             app.DeviceSettingsTab = uitab(app.TabGroup);

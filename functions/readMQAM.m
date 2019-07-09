@@ -39,6 +39,7 @@ try
     CODING = rxObj.coding;
     preM = rxObj.preM;
     preTaps = rxObj.preTaps;
+    itrs = rxObj.itrs;
 catch
     error('Rx Object not properly initialized.');
 end
@@ -148,9 +149,26 @@ SNR = 10*log10(mean(abs(syncSyms).^2)/mean(abs(noiseRx).^2))
 
 %% Demodulate and Decode
 if ~CODING
-    rxBits = qamdemod(dataSymsRx,M,'gray','OutputType','bit','UnitAveragePower',true);
+    rxBitsFull = qamdemod(dataSymsRx,M,'gray','OutputType','bit','UnitAveragePower',true);
+    
+    % Remove padding
+    if(mod(length(TXdataBlock),log2(M)))
+        padBits = log2(M)-mod(length(TXdataBlock),log2(M));
+    else
+        padBits = 0;
+    end
+    rxBits = rxBitsFull(1:end-padBits);
+    
 else
-    rxLLRs = qamdemod(dataSymsRx,M,'gray','OutputType','approxllr','UnitAveragePower',true);
+    rxLLRsFull = qamdemod(dataSymsRx,M,'gray','OutputType','approxllr','UnitAveragePower',true);
+    
+    % Remove padding
+    if(mod(length(TXdataBlock),log2(M)))
+        padBits = log2(M)-mod(length(TXdataBlock),log2(M));
+    else
+        padBits = 0;
+    end
+    rxLLRs = rxLLRsFull(1:end-padBits);
     
     if CODING == 1
         % conv decode
@@ -158,6 +176,9 @@ else
     elseif CODING == 2
         % LDPC decode
         rxBits = ldpcDecode(rxLLRs,rxObj.blockLen,rxObj.rate);
+    elseif CODING == 3
+        % turbo decode
+        rxBits = turbDecode(rxLLRs,length(txBits),itrs);
     end
 end
 

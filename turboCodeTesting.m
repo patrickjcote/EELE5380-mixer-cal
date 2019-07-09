@@ -2,7 +2,7 @@
 
 
 %% Encode
-blockLen = 5000
+blockLen = 50
 M = 1024;
 
 dataBlock = randi([0 1], blockLen,1);
