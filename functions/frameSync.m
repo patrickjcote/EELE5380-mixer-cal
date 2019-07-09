@@ -57,10 +57,10 @@ function [symsRx,sto,n0] = frameSync(Irx,Qrx,syncSyms,sps,frameLen)
     symsRx = symsRx.*exp(-1i*phaseOffset*pi/180);
     IrxCorr = real((Irx + 1i*Qrx).*exp(-1i*phaseOffset*pi/180));
    
-    % Plot
-    sto0 = n0*sps + sto;
-    symNdx = (0:frameLen-1)*sps + sto0 - 1;
-    n = 1:length(IrxCorr);
-    figure;
-    plot(n,IrxCorr,symNdx,IrxCorr(symNdx),'x')
+%     % Plot
+%     sto0 = n0*sps + sto;
+%     symNdx = (0:frameLen-1)*sps + sto0 - 1;
+%     n = 1:length(IrxCorr);
+%     figure;
+%     plot(n,IrxCorr,symNdx,IrxCorr(symNdx),'x')
 end
