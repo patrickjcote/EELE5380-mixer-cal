@@ -21,6 +21,8 @@ classdef mqamApp < matlab.apps.AppBase
         DataRateTxt                     matlab.ui.control.Label
         BlockLengthDropDown             matlab.ui.control.DropDown
         BlockLengthDropDownLabel        matlab.ui.control.Label
+        BlocksDropDownLabel             matlab.ui.control.Label
+        BlocksDropDown                  matlab.ui.control.DropDown
         BlockSettingsTab                matlab.ui.container.Tab
         SymbolRatesymssecEditFieldLabel  matlab.ui.control.Label
         SymbolRatesymssecEditField      matlab.ui.control.NumericEditField
@@ -353,6 +355,8 @@ classdef mqamApp < matlab.apps.AppBase
             txObj.rxCal = RX_CAL;
             txObj.M = str2num(app.QAMOrderDropDown.Value);
             txObj.itrs = app.DecodeIterationsEditField.Value;
+            txObj.readItrs = str2num(app.BlocksDropDown.Value);
+
             
             % Load Preamble Length, Set M-seq order and taps
             switch str2num(app.SyncPreambleLengthDropDown.Value)
@@ -529,7 +533,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.ReadButton = uibutton(app.TxRxTab, 'state');
             app.ReadButton.ValueChangedFcn = createCallbackFcn(app, @ReadButtonValueChanged, true);
             app.ReadButton.Text = 'Read';
-            app.ReadButton.Position = [239 46 100 22];
+            app.ReadButton.Position = [209 46 100 22];
 
             % Create QAMOrderDropDownLabel
             app.QAMOrderDropDownLabel = uilabel(app.TxRxTab);
@@ -614,6 +618,19 @@ classdef mqamApp < matlab.apps.AppBase
             app.BlockLengthDropDownLabel = uilabel(app.TxRxTab);
             app.BlockLengthDropDownLabel.Position = [31 266 134 22];
             app.BlockLengthDropDownLabel.Text = 'Total Block Length (bits)';
+
+            % Create BlocksDropDownLabel
+            app.BlocksDropDownLabel = uilabel(app.TxRxTab);
+            app.BlocksDropDownLabel.Position = [322 67 44 22];
+            app.BlocksDropDownLabel.Text = 'Blocks:';
+
+            % Create BlocksDropDown
+            app.BlocksDropDown = uidropdown(app.TxRxTab);
+            app.BlocksDropDown.Items = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '10'};
+            app.BlocksDropDown.Editable = 'on';
+            app.BlocksDropDown.BackgroundColor = [1 1 1];
+            app.BlocksDropDown.Position = [320 46 48 22];
+            app.BlocksDropDown.Value = '1';
 
             % Create BlockSettingsTab
             app.BlockSettingsTab = uitab(app.TabGroup);
