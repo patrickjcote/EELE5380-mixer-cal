@@ -59,11 +59,12 @@ if isnumeric(AWGVisaType)
     end
 end
 
-sps = 10;           % Samples per Symbol        [Samp/sym]
+sps = 50;           % Samples per Symbol        [Samp/sym]
 
 %% Build BPSK Preamble and Modulated Data Block
 preamble = ([mSeq(preM,preTaps);1]*2-1);               % Preamble M-sequence
 
+preamble = preamble*exp(1i*pi/4);
 % Add padding
 if(mod(length(encBits),log2(M)))
     padBits = log2(M)-mod(length(encBits),log2(M))

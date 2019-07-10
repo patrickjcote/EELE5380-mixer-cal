@@ -89,7 +89,7 @@ for N_READ = 1:readItrs
         
         % Set DSO scaling based on Frame Size
         % TODO: Adjust setDSO Nsyms based on coding rate
-        setDSO(1,Fsym,Nsyms,DSOVisaType,DSOVisaAddr);
+        setDSO(1,Fsym,Nsyms+1024,DSOVisaType,DSOVisaAddr);
         % Read the signal from the DSO
         [ Irx, ~ ] = readDSO(1,1,DSOVisaType,DSOVisaAddr);
         [ Qrx, tq ] = readDSO(2,0,DSOVisaType,DSOVisaAddr);
@@ -139,12 +139,12 @@ for N_READ = 1:readItrs
     
     %% Frame Sync
     % Build known sent symbols to use in synchronization
-    syncSyms = ([mSeq(preM,preTaps);1]*2-1);               % Preamble M-sequence
+    syncSyms = ([mSeq(preM,preTaps);1]*2-1)*exp(1i*pi/4);               % Preamble M-sequence
     % Synchronize and slice
     [allSymsRx, sto, lag] = frameSync(Irx,Qrx,syncSyms,Rxsps,(length(syncSyms) + Nsyms));
     preRx = allSymsRx(1:length(syncSyms));
     dataSymsRx = allSymsRx(length(syncSyms)+1:end);
-    
+
     %% AGC
     dataSymsRx = dataSymsRx/mean(abs(preRx)) * mean(abs(syncSyms));
     preRx = preRx/mean(abs(preRx)) * mean(abs(syncSyms));
