@@ -114,6 +114,7 @@ for N_READ = 1:readItrs
         %% Sim Mode Add SNR
 
     if SNRADD<100
+        rng(N_READ);
         Crx = Irx + 1i*Qrx;
         Crx = awgn(Crx,SNRADD-10,'measured');
         Irx = real(Crx);
@@ -168,35 +169,43 @@ for N_READ = 1:readItrs
     
     %% Demodulate and Decode
     if ~CODING
-        rxBitsFull = qamdemod(dataSymsRx,M,'gray','OutputType','bit','UnitAveragePower',true);
+        rxBitsFull = qamdemod(dataSymsRx,M,'OutputType','bit','UnitAveragePower',true);
         
         % Remove padding
         if(mod(length(TXdataBlock),log2(M)))
-            padBits = log2(M)-mod(length(TXdataBlock),log2(M));
+            padBitsRx = log2(M)-mod(length(TXdataBlock),log2(M));
         else
-            padBits = 0;
+            padBitsRx = 0;
         end
-        rxBits = rxBitsFull(1:end-padBits);
+        rxBits = rxBitsFull(1:end-padBitsRx);
         
     else
-        rxLLRsFull = qamdemod(dataSymsRx,M,'gray','OutputType','approxllr','UnitAveragePower',true);
-        
+        noiseVar = 10.^(-SNR/10);
+        if noiseVar<5e-2
+            noiseVar = 0.01;
+        end
+
         % Remove padding
         if(mod(length(TXdataBlock),log2(M)))
-            padBits = log2(M)-mod(length(TXdataBlock),log2(M));
+            padBitsRx = log2(M)-mod(length(TXdataBlock),log2(M))
         else
-            padBits = 0;
+            padBitsRx = 0
         end
-        rxLLRs = rxLLRsFull(1:end-padBits);
-        
+
         if CODING == 1
             % conv decode
+            rxLLRsFull = qamdemod(dataSymsRx,M,'OutputType','approxllr','UnitAveragePower',true);
+            rxLLRs = rxLLRsFull(1:end-padBitsRx);
             rxBits = convDecode(rxLLRs,rxObj.rate);
         elseif CODING == 2
             % LDPC decode
-            rxBits = ldpcDecode(rxLLRs,rxObj.blockLen,rxObj.rate,itrs);
+            rxLLRsFull = qamdemod(dataSymsRx,M,'OutputType','llr','UnitAveragePower',true,'NoiseVariance',noiseVar);
+            rxLLRs = rxLLRsFull(1:end-padBitsRx);
+            rxBits = double(ldpcDecode(rxLLRs,rxObj.blockLen,rxObj.rate,itrs));
         elseif CODING == 3
             % turbo decode
+            rxLLRsFull = qamdemod(dataSymsRx,M,'OutputType','approxllr','UnitAveragePower',true,'NoiseVariance',noiseVar);
+            rxLLRs = rxLLRsFull(1:end-padBitsRx);
             rxBits = turbDecode(rxLLRs,length(txBits),itrs);
         end
     end
@@ -234,7 +243,7 @@ clear mBox
 %% Plot Received Symbols and Symbols in Error
 % TODO: Think about symbols in error when FEC coding is used
 % Find bit errors
-errs = rxBits ~= txBits;
+errs = (rxBits ~= txBits);
 % Calculate a symbol index for each bit error
 ndx = ceil(find(errs==1)/log2(M));
 % Plot

@@ -20,7 +20,7 @@ if ~exist('max_itrs','var')
 end
 
 % Build Rates Vector
-rateVec = [ 1/2; 2/3; 3/4; 5/6;];
+rateVec = [ 1/2; 2/3; 3/4; 5/6];
 % Initialize LDPC object
 ldpc_code = LDPCCode(0, 0);    
 % Set LDPC object block length and coding rate

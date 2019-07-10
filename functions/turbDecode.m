@@ -17,7 +17,7 @@ function [dataBits] = turbDecode(llrs,blockLen,numIts)
 % EELE 5380 - Adv. Signals and Systems
 
 
-rng(654631);    % Interleave randomperm seed
+rng(6541);    % Interleave randomperm seed
 intrlvNdx = randperm(blockLen);
 hTDec = comm.TurboDecoder('InterleaverIndicesSource','Input port','NumIterations',numIts);
 dataBits = hTDec(-llrs,intrlvNdx);

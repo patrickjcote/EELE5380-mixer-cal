@@ -74,7 +74,7 @@ end
 
 txBits = [encBits; randi([0 1], padBits,1)];
 
-dataBlock  = qammod(txBits,M,'gray','InputType','bit','UnitAveragePower',true);
+dataBlock  = qammod(txBits,M,'InputType','bit','UnitAveragePower',true);
 txBlock = [preamble;dataBlock];
 
 %% Build Output

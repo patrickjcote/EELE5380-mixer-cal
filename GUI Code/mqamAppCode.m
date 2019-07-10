@@ -168,7 +168,7 @@ classdef mqamApp < matlab.apps.AppBase
                     rate = str2num(app.RateDropDown.Value);
                     [encBlock, dataBits] = ldpcEncode(blockLen,rate,rng_seed);
                 case 'Turbo'
-                    [encBlock, dataBits] = turbEncode(round((blockLen-12)/3),rng_seed);
+                    [encBlock, dataBits] = turbEncode((blockLen-12)/3,rng_seed);
                 otherwise
                     rng(rng_seed);          % Random Seed
                     dataBits = randi([0 1],blockLen,1);
@@ -279,7 +279,7 @@ classdef mqamApp < matlab.apps.AppBase
                 app.Status.FontColor = [0.64 0.08 0.18];
                 return
             end
-            
+                       
             
             txObj.encBits = encBlock;
             txObj.dataBits = dataBits;
@@ -353,64 +353,64 @@ classdef mqamApp < matlab.apps.AppBase
             end
             
             % Load Tx Object
-            txObj.Fsym = app.SymbolRatesymssecEditField.Value;
-            txObj.rxCal = RX_CAL;
-            txObj.M = str2num(app.QAMOrderDropDown.Value);
-            txObj.itrs = app.DecodeIterationsEditField.Value;
-            txObj.readItrs = str2num(app.ofBlocksDropDown.Value);
-            txObj.awgnSNR = app.SimulatedAWGNSNREditField.Value;
+            rxObj.Fsym = app.SymbolRatesymssecEditField.Value;
+            rxObj.rxCal = RX_CAL;
+            rxObj.M = str2num(app.QAMOrderDropDown.Value);
+            rxObj.itrs = app.DecodeIterationsEditField.Value;
+            rxObj.readItrs = str2num(app.ofBlocksDropDown.Value);
+            rxObj.awgnSNR = app.SimulatedAWGNSNREditField.Value;
 
             
             % Load Preamble Length, Set M-seq order and taps
             switch str2num(app.SyncPreambleLengthDropDown.Value)
                 case 256
-                    txObj.preM = 8;
-                    txObj.preTaps = [8, 6, 5, 4];
+                    rxObj.preM = 8;
+                    rxObj.preTaps = [8, 6, 5, 4];
                 case 512
-                    txObj.preM = 9;
-                    txObj.preTaps = [9, 8, 6, 5];
+                    rxObj.preM = 9;
+                    rxObj.preTaps = [9, 8, 6, 5];
                 case 1024
-                    txObj.preM = 10;
-                    txObj.preTaps = [10, 9, 7, 6];
+                    rxObj.preM = 10;
+                    rxObj.preTaps = [10, 9, 7, 6];
                 case 2048
-                    txObj.preM = 11;
-                    txObj.preTaps = [11, 10, 9, 7];
+                    rxObj.preM = 11;
+                    rxObj.preTaps = [11, 10, 9, 7];
                 otherwise
-                    txObj.preM = 10;
-                    txObj.preTaps = [10, 9, 7, 6];
+                    rxObj.preM = 10;
+                    rxObj.preTaps = [10, 9, 7, 6];
             end
             
             
             [encBlock, dataBits] = buildencBlock(app);
-            txObj.encBits = encBlock;
-            txObj.dataBits = dataBits;
+            rxObj.encBits = encBlock;
+            rxObj.dataBits = dataBits;
             ratesVec = [1/2 2/3 3/4 5/6 1/3];
             
             % Load Coding Scheme into Tx Object
             selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
             switch selectedButton.Text
                 case 'None' % No channel coding
-                    txObj.coding = 0;
-                    txObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(txObj.M)));
+                    rxObj.coding = 0;
+                    rxObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(rxObj.M)));
                 case 'Convolutional'
-                    txObj.coding = 1;
-                    txObj.rate = str2num(app.RateDropDown.Value);
-                    txObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(txObj.M)));
+                    rxObj.coding = 1;
+                    rxObj.rate = str2num(app.RateDropDown.Value);
+                    rxObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(rxObj.M)));
                 case 'LDPC'
-                    txObj.blockLen = str2num(app.BlockLengthDropDown.Value);
-                    txObj.rate = str2num(app.RateDropDown.Value);
-                    txObj.coding = 2;
-                    txObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(txObj.M)));
+                    rxObj.blockLen = str2num(app.BlockLengthDropDown.Value);
+                    rxObj.rate = str2num(app.RateDropDown.Value);
+                    rxObj.coding = 2;
+                    rxObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(rxObj.M)));
                 case 'Turbo'
-                    txObj.coding = 3;
-                    txObj.rate = str2num(app.RateDropDown.Value);
-                    txObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(txObj.M)));
-                    txObj.itrs = app.DecodeIterationsEditField.Value;
+                    rxObj.coding = 3;
+                    rxObj.rate = str2num(app.RateDropDown.Value);
+                    rxObj.Nsyms = ceil(str2num(app.BlockLengthDropDown.Value)/(log2(rxObj.M)));
+                    rxObj.itrs = app.DecodeIterationsEditField.Value;
                 otherwise
             end
-                              
+                            readMQAM(rxObj,DSOVisaType,DSOVisaAddr);   
                     try
-                        readMQAM(txObj,DSOVisaType,DSOVisaAddr); 
+                        
                         app.Status.FontColor = [0.47 0.67 0.19];
                         app.Status.Text = 'Read Successful.';
                     catch ME
@@ -476,7 +476,7 @@ classdef mqamApp < matlab.apps.AppBase
                     case 'Turbo'
                         app.RateDropDown.Visible = 1;
                         app.RateDropDownLabel.Visible = 1;
-                        app.BlockLengthDropDown.Editable = 0;
+                        app.BlockLengthDropDown.Editable = 1;
                         app.RateDropDown.Editable = 0;
                         app.RateDropDown.Items = {'1/3'};
                         app.RateDropDown.ItemsData = {'5'};

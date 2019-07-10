@@ -23,7 +23,7 @@ dataBits = randi([0 1],dataLen,1);
 % Load Encoder objects
 hTEnc = comm.TurboEncoder('InterleaverIndicesSource','Input port');
 % Build Interleave Indices
-rng(654631);    % Interleave randomperm seed
+rng(6541);    % Interleave randomperm seed
 intrlvNdx = randperm(dataLen);
 % Encode Data
 encBlock = hTEnc(dataBits,intrlvNdx);
