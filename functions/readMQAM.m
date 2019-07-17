@@ -28,6 +28,8 @@ function [] = readMQAM(rxObj,DSOVisaType,DSOVisaAddr)
 % 2019 - Patrick Cote
 % EELE 5380 - Adv. Signals and Systems
 
+format compact
+
 %% Try Parsing rx object
 try
     M = rxObj.M;
@@ -70,10 +72,10 @@ else
     READ_DSO = 0;
 end
 
-hErrors = comm.ErrorRate;
+totalErrors = comm.ErrorRate;
 blockErrs = 0;
 for N_READ = 1:readItrs
-    
+    fprintf('Receiving Block %d:\n',N_READ);
     %% Get Data - Read DSO or Load File
     if READ_DSO
         % Check for VISA Address and Type, if none, set defaults
@@ -187,9 +189,9 @@ for N_READ = 1:readItrs
 
         % Remove padding
         if(mod(length(TXdataBlock),log2(M)))
-            padBitsRx = log2(M)-mod(length(TXdataBlock),log2(M))
+            padBitsRx = log2(M)-mod(length(TXdataBlock),log2(M));
         else
-            padBitsRx = 0
+            padBitsRx = 0;
         end
 
         if CODING == 1
@@ -212,16 +214,22 @@ for N_READ = 1:readItrs
     
     %% Calculate BER
     
-    errorStats = hErrors(txBits,rxBits);
+    totalErrorStats = totalErrors(txBits,rxBits);
     if sum(txBits ~= rxBits)
         blockErrs = blockErrs+1;
     end
+    
+    itrErrors = comm.ErrorRate;
+    itrErrorStats = itrErrors(txBits,rxBits);
+    BER = itrErrorStats(1)
+    bit_errors = itrErrorStats(2)
+    totalBits = itrErrorStats(3)
 end
 
 %% Load Error Stats
-BER = errorStats(1);
-bit_errors = errorStats(2);
-totalBits = errorStats(3);
+BER = totalErrorStats(1);
+bit_errors = totalErrorStats(2);
+totalBits = totalErrorStats(3);
 BLER = blockErrs/readItrs;
 
 %% Report SNR and BER Stats

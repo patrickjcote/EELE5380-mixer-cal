@@ -5,15 +5,9 @@ readMQAM.m
 Update number of symbols to include preamble for DSO window size
 add DSO vertical scale adjustment
 
-Errors:
-"Warning: Error Running readMQAM 
-Warning: Data type mismatch with input 2; expected
-double, got boolean. "
-
 add plot sync function
 
 display SNR, BER in command window for each iteration
-
 
 buildMQAM.m
 Add variable sps for AWG output

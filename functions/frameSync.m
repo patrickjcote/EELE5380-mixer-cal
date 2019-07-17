@@ -36,7 +36,7 @@ function [symsRx,sto,n0] = frameSync(Irx,Qrx,syncSyms,sps,frameLen)
     end
     
     % Find the max correlation peak to determine sample timing offset
-    [~,sto] = max(stoVec(:,1));
+    [maxPeak,sto] = max(stoVec(:,1));
 
     % Find the frame start symbol offset for the given sto
     n0 = (stoVec(sto,2));

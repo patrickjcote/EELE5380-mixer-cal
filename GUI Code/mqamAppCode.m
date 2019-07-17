@@ -5,8 +5,8 @@ classdef mqamApp < matlab.apps.AppBase
         MQAMSystemv075UIFigure          matlab.ui.Figure
         TabGroup                        matlab.ui.container.TabGroup
         TxRxTab                         matlab.ui.container.Tab
-        SendButton                      matlab.ui.control.StateButton
-        ReadButton                      matlab.ui.control.StateButton
+        TransmitButton                  matlab.ui.control.StateButton
+        ReceiveButton                   matlab.ui.control.StateButton
         QAMOrderDropDownLabel           matlab.ui.control.Label
         QAMOrderDropDown                matlab.ui.control.DropDown
         Status                          matlab.ui.control.Label
@@ -61,8 +61,8 @@ classdef mqamApp < matlab.apps.AppBase
             app.AWGDropDown.Items = {''};
             app.AWGDropDown.ItemsData = {''};
             % Disable Buttons
-            app.SendButton.Enable = 0;
-            app.ReadButton.Enable = 0;
+            app.TransmitButton.Enable = 0;
+            app.ReceiveButton.Enable = 0;
             % Force a redraw of GUI
             drawnow
             
@@ -79,8 +79,8 @@ classdef mqamApp < matlab.apps.AppBase
                 % Set status lamp color
                 app.RefreshLamp.Color = 'Red';
                 % Disable Calibration Function Buttons
-                %                 app.SendButton.Enable = 0;
-                %                 app.ReadButton.Enable = 0;
+                %                 app.TransmitButton.Enable = 0;
+                %                 app.ReceiveButton.Enable = 0;
                 app.Status.Text = 'No Devices Available.';
                 app.Status.FontColor = [0.64 0.08 0.18];
                 % Sound
@@ -118,8 +118,8 @@ classdef mqamApp < matlab.apps.AppBase
                 end
                 
                 % Enable Run Function Buttons
-                app.SendButton.Enable = 1;
-                app.ReadButton.Enable = 1;
+                app.TransmitButton.Enable = 1;
+                app.ReceiveButton.Enable = 1;
                 app.Status.Text = '';
                 
                 % Device refresh successful, set lamp to green
@@ -241,8 +241,8 @@ classdef mqamApp < matlab.apps.AppBase
             calcDataRate(app);
         end
 
-        % Value changed function: SendButton
-        function SendButtonValueChanged(app, event)
+        % Value changed function: TransmitButton
+        function TransmitButtonValueChanged(app, event)
             
             app.Status.Text = 'Starting Transmit...';
             app.Status.FontColor = 'Black';
@@ -319,7 +319,7 @@ classdef mqamApp < matlab.apps.AppBase
             end
             
             % Unpress send button
-            app.SendButton.Value = 0;
+            app.TransmitButton.Value = 0;
             
             % Disable/Enable visablity to bring app window back to the foreground
             app.MQAMSystemv075UIFigure.Visible = 0;
@@ -327,8 +327,8 @@ classdef mqamApp < matlab.apps.AppBase
             
         end
 
-        % Value changed function: ReadButton
-        function ReadButtonValueChanged(app, event)
+        % Value changed function: ReceiveButton
+        function ReceiveButtonValueChanged(app, event)
             
             app.Status.Text = 'Starting Receive...';
             app.Status.FontColor = 'Black';
@@ -408,9 +408,9 @@ classdef mqamApp < matlab.apps.AppBase
                     rxObj.itrs = app.DecodeIterationsEditField.Value;
                 otherwise
             end
-                            readMQAM(rxObj,DSOVisaType,DSOVisaAddr);   
+                             
                     try
-                        
+                        readMQAM(rxObj,DSOVisaType,DSOVisaAddr);
                         app.Status.FontColor = [0.47 0.67 0.19];
                         app.Status.Text = 'Read Successful.';
                     catch ME
@@ -420,7 +420,7 @@ classdef mqamApp < matlab.apps.AppBase
                         app.Status.FontColor = [0.64 0.08 0.18];
                     end
                     
-                    app.ReadButton.Value = 0;
+                    app.ReceiveButton.Value = 0;
                     
             % Disable/Enable visablity to bring app window back to the foreground
             app.MQAMSystemv075UIFigure.Visible = 0;
@@ -439,8 +439,8 @@ classdef mqamApp < matlab.apps.AppBase
                 
                 if SIM_MODE
                     % Enable Calibration Function Buttons
-                    app.SendButton.Enable = 1;
-                    app.ReadButton.Enable = 1;
+                    app.TransmitButton.Enable = 1;
+                    app.ReceiveButton.Enable = 1;
                     app.ApplyRxCalibrationSwitch.Value = 'Off';
                     app.ApplyTxCalibrationSwitch.Value = 'Off';
                     app.Status.FontColor = [0.47 0.67 0.19];
@@ -526,17 +526,17 @@ classdef mqamApp < matlab.apps.AppBase
             app.TxRxTab = uitab(app.TabGroup);
             app.TxRxTab.Title = 'Tx/Rx';
 
-            % Create SendButton
-            app.SendButton = uibutton(app.TxRxTab, 'state');
-            app.SendButton.ValueChangedFcn = createCallbackFcn(app, @SendButtonValueChanged, true);
-            app.SendButton.Text = 'Send';
-            app.SendButton.Position = [48 47 100 22];
+            % Create TransmitButton
+            app.TransmitButton = uibutton(app.TxRxTab, 'state');
+            app.TransmitButton.ValueChangedFcn = createCallbackFcn(app, @TransmitButtonValueChanged, true);
+            app.TransmitButton.Text = 'Transmit';
+            app.TransmitButton.Position = [48 47 100 22];
 
-            % Create ReadButton
-            app.ReadButton = uibutton(app.TxRxTab, 'state');
-            app.ReadButton.ValueChangedFcn = createCallbackFcn(app, @ReadButtonValueChanged, true);
-            app.ReadButton.Text = 'Read';
-            app.ReadButton.Position = [195 47 100 22];
+            % Create ReceiveButton
+            app.ReceiveButton = uibutton(app.TxRxTab, 'state');
+            app.ReceiveButton.ValueChangedFcn = createCallbackFcn(app, @ReceiveButtonValueChanged, true);
+            app.ReceiveButton.Text = 'Receive';
+            app.ReceiveButton.Position = [195 47 100 22];
 
             % Create QAMOrderDropDownLabel
             app.QAMOrderDropDownLabel = uilabel(app.TxRxTab);
@@ -615,7 +615,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.BlockLengthDropDown.ItemsData = {'648', '1296', '1944'};
             app.BlockLengthDropDown.ValueChangedFcn = createCallbackFcn(app, @BlockLengthDropDownValueChanged, true);
             app.BlockLengthDropDown.Position = [233 266 131 22];
-            app.BlockLengthDropDown.Value = '648';
+            app.BlockLengthDropDown.Value = '1944';
 
             % Create BlockLengthDropDownLabel
             app.BlockLengthDropDownLabel = uilabel(app.TxRxTab);
