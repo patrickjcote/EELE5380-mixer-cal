@@ -193,22 +193,26 @@ for N_READ = 1:readItrs
         else
             padBitsRx = 0;
         end
-
+        codeType = 'Uncoded';
+        ratesVec = {'1/2','2/3','3/4','5/6,','1/3'};
         if CODING == 1
             % conv decode
             rxLLRsFull = qamdemod(dataSymsRx,M,'OutputType','approxllr','UnitAveragePower',true);
             rxLLRs = rxLLRsFull(1:end-padBitsRx);
             rxBits = convDecode(rxLLRs,rxObj.rate);
+            codeType = ['Conv. Coded. Rate ',ratesVec{rxObj.rate}];
         elseif CODING == 2
             % LDPC decode
             rxLLRsFull = qamdemod(dataSymsRx,M,'OutputType','llr','UnitAveragePower',true,'NoiseVariance',noiseVar);
             rxLLRs = rxLLRsFull(1:end-padBitsRx);
             rxBits = double(ldpcDecode(rxLLRs,rxObj.blockLen,rxObj.rate,itrs));
+            codeType = ['LDPC Coded. Rate ',ratesVec{rxObj.rate}];
         elseif CODING == 3
             % turbo decode
             rxLLRsFull = qamdemod(dataSymsRx,M,'OutputType','approxllr','UnitAveragePower',true,'NoiseVariance',noiseVar);
             rxLLRs = rxLLRsFull(1:end-padBitsRx);
             rxBits = turbDecode(rxLLRs,length(txBits),itrs);
+            codeType = ['Turbo Coded. Rate ',ratesVec{rxObj.rate}];
         end
     end
     
@@ -245,7 +249,7 @@ mBox.Message = {'\fontsize{20}';
     ['     Total Bits:    ',num2str(totalBits)];
     ' ';
     };
-msgbox(mBox.Message,'Results',mBox);
+% msgbox(mBox.Message,'Results',mBox);
 clear mBox
 
 %% Plot Received Symbols and Symbols in Error
@@ -260,5 +264,8 @@ plot(real(dataSymsRx),imag(dataSymsRx),'.',real(dataSymsRx(ndx)),imag(dataSymsRx
 pbaspect([1 1 1]);
 axis([-1.1 1.1 -1.1 1.1]*max(abs(dataSymsRx)));
 xlabel('I');ylabel('Q');
-title('Received Constellation');
+titleBER = {[num2str(M),'-QAM. ',codeType,' @ SNR: ',num2str(SNR),' dB'];
+    ['BER: ',num2str(BER),'   BLER: ',num2str(BLER),'    Total Errors:   ',num2str(bit_errors),'   Total Bits:    ',num2str(totalBits)];
+    };
+title(titleBER);
 grid on; grid minor;
