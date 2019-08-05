@@ -38,6 +38,10 @@ classdef mqamApp < matlab.apps.AppBase
         DecodeIterationsEditField       matlab.ui.control.NumericEditField
         SimulatedAWGNSNREditFieldLabel  matlab.ui.control.Label
         SimulatedAWGNSNREditField       matlab.ui.control.NumericEditField
+        RFCalibrationTab                matlab.ui.container.Tab
+        RunTxCalibrationButton          matlab.ui.control.StateButton
+        AnalogRxFilterTuningButton      matlab.ui.control.StateButton
+        RunRxCalibrationButton          matlab.ui.control.StateButton
         DeviceSettingsTab               matlab.ui.container.Tab
         ScopeDropDownLabel              matlab.ui.control.Label
         ScopeDropDown                   matlab.ui.control.DropDown
@@ -63,6 +67,10 @@ classdef mqamApp < matlab.apps.AppBase
             % Disable Buttons
             app.TransmitButton.Enable = 0;
             app.ReceiveButton.Enable = 0;
+            % Disable Calibration Function Buttons
+            app.RunRxCalibrationButton.Enable = 0;
+            app.RunTxCalibrationButton.Enable = 0;
+            app.AnalogRxFilterTuningButton.Enable = 0;
             % Force a redraw of GUI
             drawnow
             
@@ -122,6 +130,11 @@ classdef mqamApp < matlab.apps.AppBase
                 app.ReceiveButton.Enable = 1;
                 app.Status.Text = '';
                 
+                % Enable Calibration Function Buttons
+                app.RunRxCalibrationButton.Enable = 1;
+                app.RunTxCalibrationButton.Enable = 1;
+                app.AnalogRxFilterTuningButton.Enable = 1;
+
                 % Device refresh successful, set lamp to green
                 app.RefreshLamp.Color = 'Green';
             end
@@ -438,18 +451,25 @@ classdef mqamApp < matlab.apps.AppBase
                 SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
                 
                 if SIM_MODE
-                    % Enable Calibration Function Buttons
+                    % Enable Tx/Rx Function Buttons
                     app.TransmitButton.Enable = 1;
                     app.ReceiveButton.Enable = 1;
+                    % Turn off apply calibration
                     app.ApplyRxCalibrationSwitch.Value = 'Off';
                     app.ApplyTxCalibrationSwitch.Value = 'Off';
                     app.Status.FontColor = [0.47 0.67 0.19];
+                    % Enable Calibration Function Buttons
+                    app.RunRxCalibrationButton.Enable = 1;
+                    app.RunTxCalibrationButton.Enable = 1;
+                    app.AnalogRxFilterTuningButton.Enable = 1;
+                    % Update Status
                     app.Status.Text = 'Entered Simulator Mode.';
                 else
                     app.ApplyRxCalibrationSwitch.Value = 'On';
                     app.ApplyTxCalibrationSwitch.Value = 'On';
                     refreshDevices(app);
-                end
+                end               
+                
         end
 
         % Selection changed function: 
@@ -504,6 +524,154 @@ classdef mqamApp < matlab.apps.AppBase
         function BlockLengthDropDownValueChanged(app, event)
             calcDataRate(app);
         end
+
+        % Value changed function: RunTxCalibrationButton
+        function RunTxCalibrationButtonValueChanged(app, event)
+
+            DSOVisa = app.ScopeDropDown.Value;
+            DSOVisaType = DSOVisa.type;
+            DSOVisaAddr = DSOVisa.addr;
+            
+            AWGVisa = app.AWGDropDown.Value;
+            AWGVisaType = AWGVisa.type;
+            AWGVisaAddr = AWGVisa.addr;
+            
+            app.Status.Text = 'Running Tx Calibration';
+            app.Status.FontColor = 'Black';
+            try
+                readTxCal(DSOVisaType,DSOVisaAddr,AWGVisaType,AWGVisaAddr)
+                app.Status.Text = 'Tx Calibration Successful';
+                app.Status.FontColor = [0.47 0.67 0.19];
+            catch ME
+                warning('Error Running readTxCal');
+                warning(ME.message);
+                app.Status.Text = 'An Error Occured During Tx Calibration';
+                app.Status.FontColor = [0.64 0.08 0.18];
+            end
+            app.RunTxCalibrationButton.Value = 0;
+            % Disable/Enable visablity to bring app window back to the foreground
+            app.MQAMSystemv075UIFigure.Visible = 0;
+            app.MQAMSystemv075UIFigure.Visible = 1;
+        end
+
+        % Value changed function: RunRxCalibrationButton
+        function RunRxCalibrationButtonValueChanged(app, event)
+            
+            global SIM_MODE
+            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
+            
+            DSOVisa = app.ScopeDropDown.Value;
+            DSOVisaType = DSOVisa.type;
+            DSOVisaAddr = DSOVisa.addr;
+            
+            AWGVisa = app.AWGDropDown.Value;
+            AWGVisaType = AWGVisa.type;
+            AWGVisaAddr = AWGVisa.addr;
+            
+            app.Status.Text = 'Running Rx Calibration';
+            app.Status.FontColor = 'Black';
+            
+            try
+                readRxCal(DSOVisaType,DSOVisaAddr,AWGVisaType,AWGVisaAddr)
+                app.Status.Text = 'Rx Calibration Successful';
+                app.Status.FontColor = [0.47 0.67 0.19];
+            catch ME
+                warning('Error Running readRxCal');
+                warning(ME.message);
+                app.Status.Text = 'An Error Occured During Rx Calibration';
+                app.Status.FontColor = [0.64 0.08 0.18];
+            end
+            
+            app.RunRxCalibrationButton.Value = 0;
+            % Disable/Enable visablity to bring app window back to the foreground
+            app.MQAMSystemv075UIFigure.Visible = 0;
+            app.MQAMSystemv075UIFigure.Visible = 1;
+        end
+
+        % Value changed function: AnalogRxFilterTuningButton
+        function AnalogRxFilterTuningButtonValueChanged(app, event)
+            
+            
+            global SIM_MODE
+            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
+            if ~SIM_MODE
+                
+                DSOVisa = app.ScopeDropDown.Value;
+                DSOVisaType = DSOVisa.type;
+                DSOVisaAddr = DSOVisa.addr;
+            
+                AWGVisa = app.AWGDropDown.Value;
+                AWGVisaType = AWGVisa.type;
+                AWGVisaAddr = AWGVisa.addr;
+            
+                
+                app.Status.Text = 'Setting Up Filter Calibration';
+                app.Status.FontColor = 'Black';
+                try
+                    
+                    % Send Pulse to AWG
+                    buildFiltCal(AWGVisaType,AWGVisaAddr);
+                    % Set Rigol to Filter Viewing mode
+                    setDSO(4,[],[],DSOVisaType,DSOVisaAddr);
+                    
+                    app.Status.Text = 'DSO Set Successful';
+                    app.Status.FontColor = [0.47 0.67 0.19];
+                    
+                    
+                    % PLot Examples
+                    if isfile('Data Files\filter_tuned.mat') && isfile('Data Files\filter_untuned.mat')
+
+                        a = load('Data Files\filter_untuned.mat');
+                        figure;
+                        plot(a.tq,a.F1rx,a.tq,a.F2rx);
+                        grid on; grid minor;
+                        legend('Filter One','Filter Two');
+                        title('Example of an Untuned Filter Response (Not Live Data)');
+                        
+                        a = load('Data Files\filter_tuned.mat');
+                        figure
+                        plot(a.tq,a.F1rx,a.tq,a.F2rx);
+                        grid on; grid minor;
+                        legend('Filter One','Filter Two');
+                        title('Example of a Tuned Filter Response (Not Live Data)');
+                        
+                    end
+                    
+                    
+                    
+                catch ME
+                    warning('Error Running setRigol');
+                    warning(ME.message);
+                    app.Status.Text = 'An Error Occured';
+                    app.Status.FontColor = [0.64 0.08 0.18];
+                end
+            else
+                
+                % PLot Examples
+                if isfile('Data Files\filter_tuned.mat') && isfile('Data Files\filter_untuned.mat')
+                    disp('try plots');
+                    a = load('Data Files\filter_untuned.mat');
+                    figure;
+                    plot(a.tq,a.F1rx,a.tq,a.F2rx);
+                    grid on; grid minor;
+                    legend('Filter One','Filter Two');
+                    title('Example of an Untuned Filter Response');
+                    
+                    a = load('Data Files\filter_tuned.mat');
+                    figure
+                    plot(a.tq,a.F1rx,a.tq,a.F2rx);
+                    grid on; grid minor;
+                    legend('Filter One','Filter Two');
+                    title('Example of a tuned Filter Response');
+                    
+                end
+            end
+            
+            app.AnalogRxFilterTuningButton.Value = 0;
+            % Disable/Enable visablity to bring app window back to the foreground
+            app.MQAMSystemv075UIFigure.Visible = 0;
+            app.MQAMSystemv075UIFigure.Visible = 1;
+        end
     end
 
     % Component initialization
@@ -516,7 +684,6 @@ classdef mqamApp < matlab.apps.AppBase
             app.MQAMSystemv075UIFigure = uifigure('Visible', 'off');
             app.MQAMSystemv075UIFigure.Position = [100 100 396 370];
             app.MQAMSystemv075UIFigure.Name = 'M-QAM System - v0.75';
-            app.MQAMSystemv075UIFigure.Resize = 'off';
 
             % Create TabGroup
             app.TabGroup = uitabgroup(app.MQAMSystemv075UIFigure);
@@ -555,7 +722,7 @@ classdef mqamApp < matlab.apps.AppBase
             % Create Status
             app.Status = uilabel(app.TxRxTab);
             app.Status.HorizontalAlignment = 'center';
-            app.Status.Position = [47 12 302 22];
+            app.Status.Position = [41 9 302 22];
             app.Status.Text = '';
 
             % Create ForwardErrorCorrectionButtonGroup
@@ -716,6 +883,28 @@ classdef mqamApp < matlab.apps.AppBase
             app.SimulatedAWGNSNREditField = uieditfield(app.BlockSettingsTab, 'numeric');
             app.SimulatedAWGNSNREditField.Position = [241 107 100 22];
             app.SimulatedAWGNSNREditField.Value = 100;
+
+            % Create RFCalibrationTab
+            app.RFCalibrationTab = uitab(app.TabGroup);
+            app.RFCalibrationTab.Title = 'RF Calibration';
+
+            % Create RunTxCalibrationButton
+            app.RunTxCalibrationButton = uibutton(app.RFCalibrationTab, 'state');
+            app.RunTxCalibrationButton.ValueChangedFcn = createCallbackFcn(app, @RunTxCalibrationButtonValueChanged, true);
+            app.RunTxCalibrationButton.Text = 'Run Tx Calibration';
+            app.RunTxCalibrationButton.Position = [141 255 115 22];
+
+            % Create AnalogRxFilterTuningButton
+            app.AnalogRxFilterTuningButton = uibutton(app.RFCalibrationTab, 'state');
+            app.AnalogRxFilterTuningButton.ValueChangedFcn = createCallbackFcn(app, @AnalogRxFilterTuningButtonValueChanged, true);
+            app.AnalogRxFilterTuningButton.Text = 'Analog Rx Filter Tuning';
+            app.AnalogRxFilterTuningButton.Position = [129 166 140 22];
+
+            % Create RunRxCalibrationButton
+            app.RunRxCalibrationButton = uibutton(app.RFCalibrationTab, 'state');
+            app.RunRxCalibrationButton.ValueChangedFcn = createCallbackFcn(app, @RunRxCalibrationButtonValueChanged, true);
+            app.RunRxCalibrationButton.Text = 'Run Rx Calibration';
+            app.RunRxCalibrationButton.Position = [141 68 116 22];
 
             % Create DeviceSettingsTab
             app.DeviceSettingsTab = uitab(app.TabGroup);
