@@ -12,6 +12,5 @@ Add variable sps for AWG output
 Add AWG filter selection
 
 mqamApp.m
-Read iteration status
 Read iteration cancel
 Turbo Block length

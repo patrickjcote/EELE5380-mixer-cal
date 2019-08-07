@@ -72,10 +72,18 @@ else
     READ_DSO = 0;
 end
 
+% Build progress bar
+
+h = waitbar(0,'Connecting to the DSO...','Name',['Receiving ',num2str(readItrs),' blocks']);
+
+
 totalErrors = comm.ErrorRate;
 blockErrs = 0;
 for N_READ = 1:readItrs
     fprintf('Receiving Block %d:\n',N_READ);
+    % Update waitbar status
+    msg = ['Receiving Block #',num2str(N_READ),'...'];
+    waitbar(0.20*(N_READ/readItrs),h,msg);
     %% Get Data - Read DSO or Load File
     if READ_DSO
         % Check for VISA Address and Type, if none, set defaults
@@ -93,7 +101,11 @@ for N_READ = 1:readItrs
         % TODO: Adjust setDSO Nsyms based on coding rate
         setDSO(1,Fsym,Nsyms+1024,DSOVisaType,DSOVisaAddr);
         % Read the signal from the DSO
+            msg = ['Receiving Block #',num2str(N_READ),' - Reading Channel 1'];
+            waitbar(0.40*(N_READ/readItrs),h,msg);
         [ Irx, ~ ] = readDSO(1,1,DSOVisaType,DSOVisaAddr);
+            msg = ['Receiving Block #',num2str(N_READ),' - Reading Channel 2'];
+            waitbar(0.60*(N_READ/readItrs),h,msg);
         [ Qrx, tq ] = readDSO(2,0,DSOVisaType,DSOVisaAddr);
         % Save The Data
         save(['Data Files\rxMqam_',num2str(M),'.mat'],'Irx','Qrx','tq');
@@ -141,6 +153,8 @@ for N_READ = 1:readItrs
     Qrx = filter(b,1,Qrx);
     
     %% Frame Sync
+    msg = ['Receiving Block #',num2str(N_READ),' - Synchronizing'];
+    waitbar(0.70*(N_READ/readItrs),h,msg);
     % Build known sent symbols to use in synchronization
     syncSyms = ([mSeq(preM,preTaps);1]*2-1)*exp(1i*pi/4);               % Preamble M-sequence
     % Synchronize and slice
@@ -170,6 +184,8 @@ for N_READ = 1:readItrs
     SNR = 10*log10(mean(abs(syncSyms).^2)/mean(abs(noiseRx).^2))
     
     %% Demodulate and Decode
+    msg = ['Receiving Block #',num2str(N_READ),' - Demod and Decod'];
+    waitbar(0.90*(N_READ/readItrs),h,msg);
     codeType = 'Uncoded';
     if ~CODING
         rxBitsFull = qamdemod(dataSymsRx,M,'OutputType','bit','UnitAveragePower',true);
@@ -217,7 +233,9 @@ for N_READ = 1:readItrs
     end
     
     %% Calculate BER
-    
+    msg = ['Receiving Block #',num2str(N_READ),' - Calculating Bit Errors'];
+    waitbar(0.95*(N_READ/readItrs),h,msg);
+    codeType = 'Uncoded';
     totalErrorStats = totalErrors(txBits,rxBits);
     if sum(txBits ~= rxBits)
         blockErrs = blockErrs+1;
@@ -228,7 +246,14 @@ for N_READ = 1:readItrs
     BER = itrErrorStats(1)
     bit_errors = itrErrorStats(2)
     totalBits = itrErrorStats(3)
+    
+
+    msg = ['Receiving Block #',num2str(N_READ),' - Successful'];
+    waitbar(1*(N_READ/readItrs),h,msg);
 end
+
+% Close Progress Bar
+close(h);           % close status bar
 
 %% Load Error Stats
 BER = totalErrorStats(1);
