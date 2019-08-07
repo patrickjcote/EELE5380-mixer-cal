@@ -2,7 +2,7 @@ classdef mqamApp < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
-        MQAMSystemv075UIFigure          matlab.ui.Figure
+        TIMSMQAMv085UIFigure            matlab.ui.Figure
         TabGroup                        matlab.ui.container.TabGroup
         TxRxTab                         matlab.ui.container.Tab
         TransmitButton                  matlab.ui.control.StateButton
@@ -335,8 +335,8 @@ classdef mqamApp < matlab.apps.AppBase
             app.TransmitButton.Value = 0;
             
             % Disable/Enable visablity to bring app window back to the foreground
-            app.MQAMSystemv075UIFigure.Visible = 0;
-            app.MQAMSystemv075UIFigure.Visible = 1;
+            app.TIMSMQAMv085UIFigure.Visible = 0;
+            app.TIMSMQAMv085UIFigure.Visible = 1;
             
         end
 
@@ -436,8 +436,8 @@ classdef mqamApp < matlab.apps.AppBase
                     app.ReceiveButton.Value = 0;
                     
             % Disable/Enable visablity to bring app window back to the foreground
-            app.MQAMSystemv075UIFigure.Visible = 0;
-            app.MQAMSystemv075UIFigure.Visible = 1;
+            app.TIMSMQAMv085UIFigure.Visible = 0;
+            app.TIMSMQAMv085UIFigure.Visible = 1;
         end
 
         % Button pushed function: RefreshDeviceListButton
@@ -550,8 +550,8 @@ classdef mqamApp < matlab.apps.AppBase
             end
             app.RunTxCalibrationButton.Value = 0;
             % Disable/Enable visablity to bring app window back to the foreground
-            app.MQAMSystemv075UIFigure.Visible = 0;
-            app.MQAMSystemv075UIFigure.Visible = 1;
+            app.TIMSMQAMv085UIFigure.Visible = 0;
+            app.TIMSMQAMv085UIFigure.Visible = 1;
         end
 
         % Value changed function: RunRxCalibrationButton
@@ -584,8 +584,8 @@ classdef mqamApp < matlab.apps.AppBase
             
             app.RunRxCalibrationButton.Value = 0;
             % Disable/Enable visablity to bring app window back to the foreground
-            app.MQAMSystemv075UIFigure.Visible = 0;
-            app.MQAMSystemv075UIFigure.Visible = 1;
+            app.TIMSMQAMv085UIFigure.Visible = 0;
+            app.TIMSMQAMv085UIFigure.Visible = 1;
         end
 
         % Value changed function: AnalogRxFilterTuningButton
@@ -669,8 +669,8 @@ classdef mqamApp < matlab.apps.AppBase
             
             app.AnalogRxFilterTuningButton.Value = 0;
             % Disable/Enable visablity to bring app window back to the foreground
-            app.MQAMSystemv075UIFigure.Visible = 0;
-            app.MQAMSystemv075UIFigure.Visible = 1;
+            app.TIMSMQAMv085UIFigure.Visible = 0;
+            app.TIMSMQAMv085UIFigure.Visible = 1;
         end
     end
 
@@ -680,13 +680,13 @@ classdef mqamApp < matlab.apps.AppBase
         % Create UIFigure and components
         function createComponents(app)
 
-            % Create MQAMSystemv075UIFigure and hide until all components are created
-            app.MQAMSystemv075UIFigure = uifigure('Visible', 'off');
-            app.MQAMSystemv075UIFigure.Position = [100 100 780 651];
-            app.MQAMSystemv075UIFigure.Name = 'M-QAM System - v0.75';
+            % Create TIMSMQAMv085UIFigure and hide until all components are created
+            app.TIMSMQAMv085UIFigure = uifigure('Visible', 'off');
+            app.TIMSMQAMv085UIFigure.Position = [100 100 780 651];
+            app.TIMSMQAMv085UIFigure.Name = 'TIMS M-QAM - v0.85';
 
             % Create TabGroup
-            app.TabGroup = uitabgroup(app.MQAMSystemv075UIFigure);
+            app.TabGroup = uitabgroup(app.TIMSMQAMv085UIFigure);
             app.TabGroup.Position = [1 0 783 652];
 
             % Create TxRxTab
@@ -978,19 +978,19 @@ classdef mqamApp < matlab.apps.AppBase
             app.EnableSimulatorModeCheckBox.Position = [223 38 339 34];
 
             % Create SimulatedAWGNSNREditFieldLabel
-            app.SimulatedAWGNSNREditFieldLabel = uilabel(app.MQAMSystemv075UIFigure);
+            app.SimulatedAWGNSNREditFieldLabel = uilabel(app.TIMSMQAMv085UIFigure);
             app.SimulatedAWGNSNREditFieldLabel.FontSize = 30;
             app.SimulatedAWGNSNREditFieldLabel.Position = [81 -320 315 36];
             app.SimulatedAWGNSNREditFieldLabel.Text = 'Simulated AWGN SNR';
 
             % Create SimulatedAWGNSNREditField
-            app.SimulatedAWGNSNREditField = uieditfield(app.MQAMSystemv075UIFigure, 'numeric');
+            app.SimulatedAWGNSNREditField = uieditfield(app.TIMSMQAMv085UIFigure, 'numeric');
             app.SimulatedAWGNSNREditField.FontSize = 30;
             app.SimulatedAWGNSNREditField.Position = [444 -324 100 36];
             app.SimulatedAWGNSNREditField.Value = 100;
 
             % Show the figure after all components are created
-            app.MQAMSystemv075UIFigure.Visible = 'on';
+            app.TIMSMQAMv085UIFigure.Visible = 'on';
         end
     end
 
@@ -1004,7 +1004,7 @@ classdef mqamApp < matlab.apps.AppBase
             createComponents(app)
 
             % Register the app with App Designer
-            registerApp(app, app.MQAMSystemv075UIFigure)
+            registerApp(app, app.TIMSMQAMv085UIFigure)
 
             % Execute the startup function
             runStartupFcn(app, @startupFcn)
@@ -1018,7 +1018,7 @@ classdef mqamApp < matlab.apps.AppBase
         function delete(app)
 
             % Delete UIFigure when app is deleted
-            delete(app.MQAMSystemv075UIFigure)
+            delete(app.TIMSMQAMv085UIFigure)
         end
     end
 end
