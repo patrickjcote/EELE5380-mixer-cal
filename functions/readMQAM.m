@@ -170,6 +170,7 @@ for N_READ = 1:readItrs
     SNR = 10*log10(mean(abs(syncSyms).^2)/mean(abs(noiseRx).^2))
     
     %% Demodulate and Decode
+    codeType = 'Uncoded';
     if ~CODING
         rxBitsFull = qamdemod(dataSymsRx,M,'OutputType','bit','UnitAveragePower',true);
         
@@ -193,7 +194,6 @@ for N_READ = 1:readItrs
         else
             padBitsRx = 0;
         end
-        codeType = 'Uncoded';
         ratesVec = {'1/2','2/3','3/4','5/6,','1/3'};
         if CODING == 1
             % conv decode
@@ -259,12 +259,12 @@ errs = (rxBits ~= txBits);
 % Calculate a symbol index for each bit error
 ndx = ceil(find(errs==1)/log2(M));
 % Plot
-figure;
+figure('name',[num2str(M),'-QAM ',codeType,' @ SNR: ',num2str(SNR),' dB'],'NumberTitle','off')
 plot(real(dataSymsRx),imag(dataSymsRx),'.',real(dataSymsRx(ndx)),imag(dataSymsRx(ndx)),'r.')
 pbaspect([1 1 1]);
 axis([-1.1 1.1 -1.1 1.1]*max(abs(dataSymsRx)));
 xlabel('I');ylabel('Q');
-titleBER = {[num2str(M),'-QAM. ',codeType,' @ SNR: ',num2str(SNR),' dB'];
+titleBER = {[num2str(M),'-QAM ',codeType,' @ SNR: ',num2str(SNR),' dB'];
     ['BER: ',num2str(BER),'   BLER: ',num2str(BLER),'    Total Errors:   ',num2str(bit_errors),'   Total Bits:    ',num2str(totalBits)];
     };
 title(titleBER);
