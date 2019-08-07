@@ -44,7 +44,7 @@ try
     itrs = rxObj.itrs;
     readItrs = rxObj.readItrs;
     SNRADD = rxObj.awgnSNR;
-
+    
 catch
     error('Rx Object not properly initialized.');
 end
@@ -56,17 +56,6 @@ if isempty(SIM_MODE)
     SIM_MODE = 0;
 end
 if ~SIM_MODE
-    %     answer = questdlg('Data Source: ', ...
-    %         'Data Source', ...
-    %         'Read DSO','Load .mat File','Read DSO');
-    %     % Handle response
-    %     switch answer
-    %         case 'Read DSO'
-    %             READ_DSO = 1;
-    %         case 'Load .mat File'
-    %             READ_DSO = 0;
-    %     end
-    
     READ_DSO = 1;
 else
     READ_DSO = 0;
@@ -101,11 +90,11 @@ for N_READ = 1:readItrs
         % TODO: Adjust setDSO Nsyms based on coding rate
         setDSO(1,Fsym,Nsyms+1024,DSOVisaType,DSOVisaAddr);
         % Read the signal from the DSO
-            msg = ['Receiving Block #',num2str(N_READ),' - Reading Channel 1'];
-            waitbar(0.40*(N_READ/readItrs),h,msg);
+        msg = ['Receiving Block #',num2str(N_READ),' - Reading Channel 1'];
+        waitbar(0.40*(N_READ/readItrs),h,msg);
         [ Irx, ~ ] = readDSO(1,1,DSOVisaType,DSOVisaAddr);
-            msg = ['Receiving Block #',num2str(N_READ),' - Reading Channel 2'];
-            waitbar(0.60*(N_READ/readItrs),h,msg);
+        msg = ['Receiving Block #',num2str(N_READ),' - Reading Channel 2'];
+        waitbar(0.60*(N_READ/readItrs),h,msg);
         [ Qrx, tq ] = readDSO(2,0,DSOVisaType,DSOVisaAddr);
         % Save The Data
         save(['Data Files\rxMqam_',num2str(M),'.mat'],'Irx','Qrx','tq');
@@ -125,17 +114,6 @@ for N_READ = 1:readItrs
         Irx = rxCor(1,:)'; Qrx = rxCor(2,:)';
     end
     
-        %% Sim Mode Add SNR
-
-    if SNRADD<100
-        rng(N_READ);
-        Crx = Irx + 1i*Qrx;
-        Crx = awgn(Crx,SNRADD-10,'measured');
-        Irx = real(Crx);
-        Qrx = imag(Crx);
-    end
-    
-    
     %% AGC To Unity Power
     agc = mean(abs(Irx+1i*Qrx));
     Irx = Irx/agc;
@@ -146,11 +124,23 @@ for N_READ = 1:readItrs
     % Build Filter Parameters
     fs = 1/mean(diff(tq));                      % Sample Rate
     Rxsps = round(fs/Fsym);                     % Samples per symbol
-    K = 0.8;                                    % Filter Tune
+    K = 1;                                    % Filter Tune
     b = 1/Rxsps*K*ones(Rxsps*K,1);              % Filter Taps
     % Filter Signals
     Irx = filter(b,1,Irx);
     Qrx = filter(b,1,Qrx);
+       
+%     %% Sim Mode Add Noise
+%     if SNRADD<100
+%         clockSeed = clock;
+%         rng(N_READ + round(clockSeed(6))*round(clockSeed(5)));
+%         Crx = Irx + 1i*Qrx;
+% %       Crx = awgn(Crx,SNRADD,'measured');
+%         channel = comm.AWGNChannel('NoiseMethod','Signal to noise ratio (SNR)','SNR',SNRADD);
+%         Crx = channel(Crx);
+%         Irx = real(Crx);
+%         Qrx = imag(Crx);
+%     end
     
     %% Frame Sync
     msg = ['Receiving Block #',num2str(N_READ),' - Synchronizing'];
@@ -161,7 +151,7 @@ for N_READ = 1:readItrs
     [allSymsRx, sto, lag] = frameSync(Irx,Qrx,syncSyms,Rxsps,(length(syncSyms) + Nsyms));
     preRx = allSymsRx(1:length(syncSyms));
     dataSymsRx = allSymsRx(length(syncSyms)+1:end);
-
+    
     %% AGC
     dataSymsRx = dataSymsRx/mean(abs(preRx)) * mean(abs(syncSyms));
     preRx = preRx/mean(abs(preRx)) * mean(abs(syncSyms));
@@ -178,6 +168,15 @@ for N_READ = 1:readItrs
     % Derotate symbols
     preRx = preRx.*exp(-1i*phaseOffset*pi/180);
     dataSymsRx = dataSymsRx.*exp(-1i*phaseOffset*pi/180);
+    
+        %% Sim Mode Add Noise
+    if SNRADD<100
+        clockSeed = clock;
+        rng(N_READ + round(clockSeed(6))*round(clockSeed(5)));
+        channel = comm.AWGNChannel('NoiseMethod','Signal to noise ratio (SNR)','SNR',SNRADD);
+        preRx = channel(preRx);
+        dataSymsRx = channel(dataSymsRx);
+    end
     
     %% Preamble SNR Calc
     noiseRx = preRx - syncSyms;
@@ -203,7 +202,7 @@ for N_READ = 1:readItrs
         if noiseVar<5e-2
             noiseVar = 0.01;
         end
-
+        
         % Remove padding
         if(mod(length(TXdataBlock),log2(M)))
             padBitsRx = log2(M)-mod(length(TXdataBlock),log2(M));
@@ -233,9 +232,9 @@ for N_READ = 1:readItrs
     end
     
     %% Calculate BER
+    % Update Progress Bar
     msg = ['Receiving Block #',num2str(N_READ),' - Calculating Bit Errors'];
     waitbar(0.95*(N_READ/readItrs),h,msg);
-    codeType = 'Uncoded';
     totalErrorStats = totalErrors(txBits,rxBits);
     if sum(txBits ~= rxBits)
         blockErrs = blockErrs+1;
@@ -247,7 +246,7 @@ for N_READ = 1:readItrs
     bit_errors = itrErrorStats(2)
     totalBits = itrErrorStats(3)
     
-
+    % Update Progress Bar
     msg = ['Receiving Block #',num2str(N_READ),' - Successful'];
     waitbar(1*(N_READ/readItrs),h,msg);
 end
@@ -269,7 +268,7 @@ mBox.Message = {'\fontsize{20}';
     ' ';
     '\bfError Stats:\rm\fontsize{15}';
     ['     BER:             ',num2str(BER)];
-    ['     BLER:           ',num2str(BLER)]; 
+    ['     BLER:           ',num2str(BLER)];
     ['     Total Errors:   ',num2str(bit_errors)];
     ['     Total Bits:    ',num2str(totalBits)];
     ' ';
@@ -285,7 +284,9 @@ errs = (rxBits ~= txBits);
 ndx = ceil(find(errs==1)/log2(M));
 % Plot
 figure('name',[num2str(M),'-QAM ',codeType,' @ SNR: ',num2str(SNR),' dB'],'NumberTitle','off')
-plot(real(dataSymsRx),imag(dataSymsRx),'.',real(dataSymsRx(ndx)),imag(dataSymsRx(ndx)),'r.')
+hold on;
+plot(real(dataSymsRx),imag(dataSymsRx),'.','MarkerSize',10)
+plot(real(dataSymsRx(ndx)),imag(dataSymsRx(ndx)),'r*','MarkerSize',15)
 pbaspect([1 1 1]);
 axis([-1.1 1.1 -1.1 1.1]*max(abs(dataSymsRx)));
 xlabel('I');ylabel('Q');
