@@ -36,6 +36,8 @@ classdef mqamApp < matlab.apps.AppBase
         RandomDataSeedDropDown          matlab.ui.control.DropDown
         DecodeIterationsEditFieldLabel  matlab.ui.control.Label
         DecodeIterationsEditField       matlab.ui.control.NumericEditField
+        SimulatedAWGNSNREditFieldLabel  matlab.ui.control.Label
+        SimulatedAWGNSNREditField       matlab.ui.control.NumericEditField
         RFCalibrationTab                matlab.ui.container.Tab
         RunTxCalibrationButton          matlab.ui.control.StateButton
         AnalogRxFilterTuningButton      matlab.ui.control.StateButton
@@ -48,8 +50,6 @@ classdef mqamApp < matlab.apps.AppBase
         RefreshDeviceListButton         matlab.ui.control.Button
         RefreshLamp                     matlab.ui.control.Lamp
         EnableSimulatorModeCheckBox     matlab.ui.control.CheckBox
-        SimulatedAWGNSNREditFieldLabel  matlab.ui.control.Label
-        SimulatedAWGNSNREditField       matlab.ui.control.NumericEditField
     end
 
     
@@ -322,7 +322,7 @@ classdef mqamApp < matlab.apps.AppBase
             try
                 buildMQAM(txObj,2,AWGVisaType,AWGVisaAddr);
                 app.Status.FontColor = [0.47 0.67 0.19];
-                app.Status.Text = 'Send Successful.';
+                app.Status.Text = 'Send Successful';
             catch ME
                 warning('Error Running buildMQAM');
                 warning(ME.message);
@@ -425,7 +425,7 @@ classdef mqamApp < matlab.apps.AppBase
                     try
                         readMQAM(rxObj,DSOVisaType,DSOVisaAddr);
                         app.Status.FontColor = [0.47 0.67 0.19];
-                        app.Status.Text = 'Read Successful.';
+                        app.Status.Text = 'Read Successful';
                     catch ME
                         warning('Error Running readMQAM');
                         warning(ME.message);
@@ -463,7 +463,7 @@ classdef mqamApp < matlab.apps.AppBase
 %                     app.RunTxCalibrationButton.Enable = 1;
 %                     app.AnalogRxFilterTuningButton.Enable = 1;
                     % Update Status
-                    app.Status.Text = 'Entered Simulator Mode.';
+                    app.Status.Text = 'Entered Simulator Mode';
                 else
                     app.ApplyRxCalibrationSwitch.Value = 'On';
                     app.ApplyTxCalibrationSwitch.Value = 'On';
@@ -493,6 +493,7 @@ classdef mqamApp < matlab.apps.AppBase
                         app.RateDropDown.Visible = 1;
                         app.RateDropDownLabel.Visible = 1;
                         app.BlockLengthDropDown.Editable = 0;
+                        app.DecodeIterationsEditField.Value = 20;
                     case 'Turbo'
                         app.RateDropDown.Visible = 1;
                         app.RateDropDownLabel.Visible = 1;
@@ -500,6 +501,7 @@ classdef mqamApp < matlab.apps.AppBase
                         app.RateDropDown.Editable = 0;
                         app.RateDropDown.Items = {'1/3'};
                         app.RateDropDown.ItemsData = {'5'};
+                        app.DecodeIterationsEditField.Value = 8;
                     otherwise
                         app.RateDropDown.Visible = 0;
                 end
@@ -902,7 +904,19 @@ classdef mqamApp < matlab.apps.AppBase
             app.DecodeIterationsEditField = uieditfield(app.BlockSettingsTab, 'numeric');
             app.DecodeIterationsEditField.FontSize = 30;
             app.DecodeIterationsEditField.Position = [518 273 100 36];
-            app.DecodeIterationsEditField.Value = 15;
+            app.DecodeIterationsEditField.Value = 8;
+
+            % Create SimulatedAWGNSNREditFieldLabel
+            app.SimulatedAWGNSNREditFieldLabel = uilabel(app.BlockSettingsTab);
+            app.SimulatedAWGNSNREditFieldLabel.FontSize = 30;
+            app.SimulatedAWGNSNREditFieldLabel.Position = [154 202 315 36];
+            app.SimulatedAWGNSNREditFieldLabel.Text = 'Simulated AWGN SNR';
+
+            % Create SimulatedAWGNSNREditField
+            app.SimulatedAWGNSNREditField = uieditfield(app.BlockSettingsTab, 'numeric');
+            app.SimulatedAWGNSNREditField.FontSize = 30;
+            app.SimulatedAWGNSNREditField.Position = [517 198 100 36];
+            app.SimulatedAWGNSNREditField.Value = 100;
 
             % Create RFCalibrationTab
             app.RFCalibrationTab = uitab(app.TabGroup);
@@ -976,18 +990,6 @@ classdef mqamApp < matlab.apps.AppBase
             app.EnableSimulatorModeCheckBox.Text = 'Enable Simulator Mode';
             app.EnableSimulatorModeCheckBox.FontSize = 30;
             app.EnableSimulatorModeCheckBox.Position = [223 38 339 34];
-
-            % Create SimulatedAWGNSNREditFieldLabel
-            app.SimulatedAWGNSNREditFieldLabel = uilabel(app.TIMSMQAMv085UIFigure);
-            app.SimulatedAWGNSNREditFieldLabel.FontSize = 30;
-            app.SimulatedAWGNSNREditFieldLabel.Position = [81 -320 315 36];
-            app.SimulatedAWGNSNREditFieldLabel.Text = 'Simulated AWGN SNR';
-
-            % Create SimulatedAWGNSNREditField
-            app.SimulatedAWGNSNREditField = uieditfield(app.TIMSMQAMv085UIFigure, 'numeric');
-            app.SimulatedAWGNSNREditField.FontSize = 30;
-            app.SimulatedAWGNSNREditField.Position = [444 -324 100 36];
-            app.SimulatedAWGNSNREditField.Value = 100;
 
             % Show the figure after all components are created
             app.TIMSMQAMv085UIFigure.Visible = 'on';
