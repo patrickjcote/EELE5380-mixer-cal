@@ -23,7 +23,7 @@ classdef mqamApp < matlab.apps.AppBase
         BlockLengthDropDownLabel        matlab.ui.control.Label
         ofBlocksDropDownLabel           matlab.ui.control.Label
         ofBlocksDropDown                matlab.ui.control.DropDown
-        BlockSettingsTab                matlab.ui.container.Tab
+        SettingsTab                     matlab.ui.container.Tab
         SymbolRatesymssecEditFieldLabel  matlab.ui.control.Label
         SymbolRatesymssecEditField      matlab.ui.control.NumericEditField
         ApplyTxCalibrationSwitchLabel   matlab.ui.control.Label
@@ -38,11 +38,11 @@ classdef mqamApp < matlab.apps.AppBase
         DecodeIterationsEditField       matlab.ui.control.NumericEditField
         SimulatedAWGNSNREditFieldLabel  matlab.ui.control.Label
         SimulatedAWGNSNREditField       matlab.ui.control.NumericEditField
-        RFCalibrationTab                matlab.ui.container.Tab
+        TIMSCalibrationTab              matlab.ui.container.Tab
         RunTxCalibrationButton          matlab.ui.control.StateButton
         AnalogRxFilterTuningButton      matlab.ui.control.StateButton
         RunRxCalibrationButton          matlab.ui.control.StateButton
-        DeviceSettingsTab               matlab.ui.container.Tab
+        DevicesTab                      matlab.ui.container.Tab
         ScopeDropDownLabel              matlab.ui.control.Label
         ScopeDropDown                   matlab.ui.control.DropDown
         AWGDropDownLabel                matlab.ui.control.Label
@@ -83,7 +83,7 @@ classdef mqamApp < matlab.apps.AppBase
                 app.ScopeDropDown.Items{1} = 'No Devices Found.';
                 app.AWGDropDown.Items{1} = 'No Devices Found.';
                 % Force App to select Device Setting Tab
-                app.TabGroup.SelectedTab = app.DeviceSettingsTab;
+                app.TabGroup.SelectedTab = app.DevicesTab;
                 % Set status lamp color
                 app.RefreshLamp.Color = 'Red';
                 % Disable Calibration Function Buttons
@@ -134,7 +134,7 @@ classdef mqamApp < matlab.apps.AppBase
                 app.RunRxCalibrationButton.Enable = 1;
                 app.RunTxCalibrationButton.Enable = 1;
                 app.AnalogRxFilterTuningButton.Enable = 1;
-
+                
                 % Device refresh successful, set lamp to green
                 app.RefreshLamp.Color = 'Green';
             end
@@ -157,7 +157,7 @@ classdef mqamApp < matlab.apps.AppBase
                     % Convolutional Coding
                     % Load Rate
                     rate = str2num(app.RateDropDown.Value);
-
+                    
                     switch rate
                         case 3
                             r = 3/4;
@@ -175,8 +175,8 @@ classdef mqamApp < matlab.apps.AppBase
                     % Tail bits to flush the encoder
                     dataBits(end-31:end) = zeros(32,1);
                     encBlock = convEncode(dataBits,rate);
-
-                        
+                    
+                    
                 case 'LDPC'
                     rate = str2num(app.RateDropDown.Value);
                     [encBlock, dataBits] = ldpcEncode(blockLen,rate,rng_seed);
@@ -215,16 +215,16 @@ classdef mqamApp < matlab.apps.AppBase
             bpSym = log2(str2num(app.QAMOrderDropDown.Value));
             
             selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
-                
-                switch selectedButton.Text
-                    case 'None'
-                        codeRate = 1;
-                    otherwise
-                        ratesVec = [1/2 2/3 3/4 5/6 1/3];
-                        codeRate = ratesVec(str2num(app.RateDropDown.Value));
-                end
-                
-
+            
+            switch selectedButton.Text
+                case 'None'
+                    codeRate = 1;
+                otherwise
+                    ratesVec = [1/2 2/3 3/4 5/6 1/3];
+                    codeRate = ratesVec(str2num(app.RateDropDown.Value));
+            end
+            
+            
             dataRate = symRate*bpSym*codeRate;
             
             app.DataRateTxt.Text = [num2str(dataRate), ' bit/s'];
@@ -260,10 +260,10 @@ classdef mqamApp < matlab.apps.AppBase
             app.Status.Text = 'Starting Transmit...';
             app.Status.FontColor = 'Black';
             
-            global SIM_MODE
-            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
             
-            if ~SIM_MODE
+            txObj.SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
+            
+            if ~txObj.SIM_MODE
                 AWGVisa = app.AWGDropDown.Value;
                 AWGVisaType = AWGVisa.type;
                 AWGVisaAddr = AWGVisa.addr;
@@ -292,7 +292,7 @@ classdef mqamApp < matlab.apps.AppBase
                 app.Status.FontColor = [0.64 0.08 0.18];
                 return
             end
-                       
+            
             
             txObj.encBits = encBlock;
             txObj.dataBits = dataBits;
@@ -346,10 +346,9 @@ classdef mqamApp < matlab.apps.AppBase
             app.Status.Text = 'Starting Receive...';
             app.Status.FontColor = 'Black';
             
-            global SIM_MODE
-            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
+            rxObj.SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
             
-            if ~SIM_MODE
+            if ~rxObj.SIM_MODE
                 DSOVisa = app.ScopeDropDown.Value;
                 DSOVisaType = DSOVisa.type;
                 DSOVisaAddr = DSOVisa.addr;
@@ -372,7 +371,7 @@ classdef mqamApp < matlab.apps.AppBase
             rxObj.itrs = app.DecodeIterationsEditField.Value;
             rxObj.readItrs = str2num(app.ofBlocksDropDown.Value);
             rxObj.awgnSNR = app.SimulatedAWGNSNREditField.Value;
-
+            
             
             % Load Preamble Length, Set M-seq order and taps
             switch str2num(app.SyncPreambleLengthDropDown.Value)
@@ -421,20 +420,20 @@ classdef mqamApp < matlab.apps.AppBase
                     rxObj.itrs = app.DecodeIterationsEditField.Value;
                 otherwise
             end
-                             
-                    try
-                        readMQAM(rxObj,DSOVisaType,DSOVisaAddr);
-                        app.Status.FontColor = [0.47 0.67 0.19];
-                        app.Status.Text = 'Read Successful';
-                    catch ME
-                        warning('Error Running readMQAM');
-                        warning(ME.message);
-                        app.Status.Text = 'An Error Occured. Check Command Window for details.';
-                        app.Status.FontColor = [0.64 0.08 0.18];
-                    end
-                    
-                    app.ReceiveButton.Value = 0;
-                    
+            
+            try
+                readMQAM(rxObj,DSOVisaType,DSOVisaAddr);
+                app.Status.FontColor = [0.47 0.67 0.19];
+                app.Status.Text = 'Read Successful';
+            catch ME
+                warning('Error Running readMQAM');
+                warning(ME.message);
+                app.Status.Text = 'An Error Occured. Check Command Window for details.';
+                app.Status.FontColor = [0.64 0.08 0.18];
+            end
+            
+            app.ReceiveButton.Value = 0;
+            
             % Disable/Enable visablity to bring app window back to the foreground
             app.TIMSMQAMv085UIFigure.Visible = 0;
             app.TIMSMQAMv085UIFigure.Visible = 1;
@@ -442,75 +441,75 @@ classdef mqamApp < matlab.apps.AppBase
 
         % Button pushed function: RefreshDeviceListButton
         function RefreshDeviceListButtonPushed(app, event)
-                refreshDevices(app);
+            refreshDevices(app);
         end
 
         % Value changed function: EnableSimulatorModeCheckBox
         function EnableSimulatorModeCheckBoxValueChanged(app, event)
-                global SIM_MODE
-                SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
-                
-                if SIM_MODE
-                    % Enable Tx/Rx Function Buttons
-                    app.TransmitButton.Enable = 1;
-                    app.ReceiveButton.Enable = 1;
-                    % Turn off apply calibration
-                    app.ApplyRxCalibrationSwitch.Value = 'Off';
-                    app.ApplyTxCalibrationSwitch.Value = 'Off';
-                    app.Status.FontColor = [0.47 0.67 0.19];
-%                     % Enable Calibration Function Buttons
-%                     app.RunRxCalibrationButton.Enable = 1;
-%                     app.RunTxCalibrationButton.Enable = 1;
-%                     app.AnalogRxFilterTuningButton.Enable = 1;
-                    % Enable AWGN SNR
-                    app.SimulatedAWGNSNREditField.Enable = 1;
-                    % Update Status
-                    app.Status.Text = 'Entered Simulator Mode';
-                else
-                    app.ApplyRxCalibrationSwitch.Value = 'On';
-                    app.ApplyTxCalibrationSwitch.Value = 'On';
-                    app.SimulatedAWGNSNREditField.Enable = 0;
-                    refreshDevices(app);
-                end               
-                
+            
+            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
+            
+            if SIM_MODE
+                % Enable Tx/Rx Function Buttons
+                app.TransmitButton.Enable = 1;
+                app.ReceiveButton.Enable = 1;
+                % Turn off apply calibration
+                app.ApplyRxCalibrationSwitch.Value = 'Off';
+                app.ApplyTxCalibrationSwitch.Value = 'Off';
+                app.Status.FontColor = [0.47 0.67 0.19];
+                %                     % Enable Calibration Function Buttons
+                %                     app.RunRxCalibrationButton.Enable = 1;
+                %                     app.RunTxCalibrationButton.Enable = 1;
+                %                     app.AnalogRxFilterTuningButton.Enable = 1;
+                % Enable AWGN SNR
+                app.SimulatedAWGNSNREditField.Enable = 1;
+                % Update Status
+                app.Status.Text = 'Entered Simulator Mode';
+            else
+                app.ApplyRxCalibrationSwitch.Value = 'On';
+                app.ApplyTxCalibrationSwitch.Value = 'On';
+                app.SimulatedAWGNSNREditField.Enable = 0;
+                refreshDevices(app);
+            end
+            
         end
 
         % Selection changed function: 
         % ForwardErrorCorrectionButtonGroup
         function ForwardErrorCorrectionButtonGroupSelectionChanged(app, event)
-                selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
-                
-                % Default Dropdown
-                app.RateDropDown.Items = {'1/2','2/3','3/4','5/6'};
-                app.RateDropDown.ItemsData = {'1', '2', '3', '4'};
-                switch selectedButton.Text
-                    case 'None'
-                        app.RateDropDown.Visible = 0;
-                        app.RateDropDownLabel.Visible = 0;
-                        app.BlockLengthDropDown.Editable = 1;
-                    case 'Convolutional'
-                        app.RateDropDown.Visible = 1;
-                        app.RateDropDownLabel.Visible = 1;
-                        app.BlockLengthDropDown.Editable = 1;
-                    case 'LDPC'
-                        app.RateDropDown.Visible = 1;
-                        app.RateDropDownLabel.Visible = 1;
-                        app.BlockLengthDropDown.Editable = 0;
-                        app.DecodeIterationsEditField.Value = 20;
-                    case 'Turbo'
-                        app.RateDropDown.Visible = 1;
-                        app.RateDropDownLabel.Visible = 1;
-                        app.BlockLengthDropDown.Editable = 1;
-                        app.RateDropDown.Editable = 0;
-                        app.RateDropDown.Items = {'1/3'};
-                        app.RateDropDown.ItemsData = {'5'};
-                        app.DecodeIterationsEditField.Value = 8;
-                    otherwise
-                        app.RateDropDown.Visible = 0;
-                end
-                
-                calcDataRate(app);
-                
+            selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
+            
+            % Default Dropdown
+            app.RateDropDown.Items = {'1/2','2/3','3/4','5/6'};
+            app.RateDropDown.ItemsData = {'1', '2', '3', '4'};
+            switch selectedButton.Text
+                case 'None'
+                    app.RateDropDown.Visible = 0;
+                    app.RateDropDownLabel.Visible = 0;
+                    app.BlockLengthDropDown.Editable = 1;
+                case 'Convolutional'
+                    app.RateDropDown.Visible = 1;
+                    app.RateDropDownLabel.Visible = 1;
+                    app.BlockLengthDropDown.Editable = 1;
+                case 'LDPC'
+                    app.RateDropDown.Visible = 1;
+                    app.RateDropDownLabel.Visible = 1;
+                    app.BlockLengthDropDown.Editable = 0;
+                    app.DecodeIterationsEditField.Value = 20;
+                case 'Turbo'
+                    app.RateDropDown.Visible = 1;
+                    app.RateDropDownLabel.Visible = 1;
+                    app.BlockLengthDropDown.Editable = 1;
+                    app.RateDropDown.Editable = 0;
+                    app.RateDropDown.Items = {'1/3'};
+                    app.RateDropDown.ItemsData = {'5'};
+                    app.DecodeIterationsEditField.Value = 8;
+                otherwise
+                    app.RateDropDown.Visible = 0;
+            end
+            
+            calcDataRate(app);
+            
         end
 
         % Value changed function: QAMOrderDropDown
@@ -562,9 +561,6 @@ classdef mqamApp < matlab.apps.AppBase
         % Value changed function: RunRxCalibrationButton
         function RunRxCalibrationButtonValueChanged(app, event)
             
-            global SIM_MODE
-            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
-            
             DSOVisa = app.ScopeDropDown.Value;
             DSOVisaType = DSOVisa.type;
             DSOVisaAddr = DSOVisa.addr;
@@ -596,80 +592,54 @@ classdef mqamApp < matlab.apps.AppBase
         % Value changed function: AnalogRxFilterTuningButton
         function AnalogRxFilterTuningButtonValueChanged(app, event)
             
+            DSOVisa = app.ScopeDropDown.Value;
+            DSOVisaType = DSOVisa.type;
+            DSOVisaAddr = DSOVisa.addr;
             
-            global SIM_MODE
-            SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
-            if ~SIM_MODE
+            AWGVisa = app.AWGDropDown.Value;
+            AWGVisaType = AWGVisa.type;
+            AWGVisaAddr = AWGVisa.addr;
+            
+            
+            app.Status.Text = 'Setting Up Filter Calibration';
+            app.Status.FontColor = 'Black';
+            try
                 
-                DSOVisa = app.ScopeDropDown.Value;
-                DSOVisaType = DSOVisa.type;
-                DSOVisaAddr = DSOVisa.addr;
-            
-                AWGVisa = app.AWGDropDown.Value;
-                AWGVisaType = AWGVisa.type;
-                AWGVisaAddr = AWGVisa.addr;
-            
+                % Send Pulse to AWG
+                buildFiltCal(AWGVisaType,AWGVisaAddr);
+                % Set Rigol to Filter Viewing mode
+                setDSO(4,[],[],DSOVisaType,DSOVisaAddr);
                 
-                app.Status.Text = 'Setting Up Filter Calibration';
-                app.Status.FontColor = 'Black';
-                try
-                    
-                    % Send Pulse to AWG
-                    buildFiltCal(AWGVisaType,AWGVisaAddr);
-                    % Set Rigol to Filter Viewing mode
-                    setDSO(4,[],[],DSOVisaType,DSOVisaAddr);
-                    
-                    app.Status.Text = 'DSO Set Successful';
-                    app.Status.FontColor = [0.47 0.67 0.19];
-                    
-                    
-                    % PLot Examples
-                    if isfile('Data Files\filter_tuned.mat') && isfile('Data Files\filter_untuned.mat')
-
-                        a = load('Data Files\filter_untuned.mat');
-                        figure;
-                        plot(a.tq,a.F1rx,a.tq,a.F2rx);
-                        grid on; grid minor;
-                        legend('Filter One','Filter Two');
-                        title('Example of an Untuned Filter Response (Not Live Data)');
-                        
-                        a = load('Data Files\filter_tuned.mat');
-                        figure
-                        plot(a.tq,a.F1rx,a.tq,a.F2rx);
-                        grid on; grid minor;
-                        legend('Filter One','Filter Two');
-                        title('Example of a Tuned Filter Response (Not Live Data)');
-                        
-                    end
-                    
-                    
-                    
-                catch ME
-                    warning('Error Running setRigol');
-                    warning(ME.message);
-                    app.Status.Text = 'An Error Occured';
-                    app.Status.FontColor = [0.64 0.08 0.18];
-                end
-            else
+                app.Status.Text = 'DSO Set Successful';
+                app.Status.FontColor = [0.47 0.67 0.19];
+                
                 
                 % PLot Examples
                 if isfile('Data Files\filter_tuned.mat') && isfile('Data Files\filter_untuned.mat')
-                    disp('try plots');
+                    
                     a = load('Data Files\filter_untuned.mat');
                     figure;
                     plot(a.tq,a.F1rx,a.tq,a.F2rx);
                     grid on; grid minor;
                     legend('Filter One','Filter Two');
-                    title('Example of an Untuned Filter Response');
+                    title('Example of an Untuned Filter Response (Not Live Data)');
                     
                     a = load('Data Files\filter_tuned.mat');
                     figure
                     plot(a.tq,a.F1rx,a.tq,a.F2rx);
                     grid on; grid minor;
                     legend('Filter One','Filter Two');
-                    title('Example of a tuned Filter Response');
+                    title('Example of a Tuned Filter Response (Not Live Data)');
                     
                 end
+                
+                
+                
+            catch ME
+                warning('Error Running setRigol');
+                warning(ME.message);
+                app.Status.Text = 'An Error Occured';
+                app.Status.FontColor = [0.64 0.08 0.18];
             end
             
             app.AnalogRxFilterTuningButton.Value = 0;
@@ -825,58 +795,58 @@ classdef mqamApp < matlab.apps.AppBase
             app.ofBlocksDropDown.Position = [664 58 64 36];
             app.ofBlocksDropDown.Value = '1';
 
-            % Create BlockSettingsTab
-            app.BlockSettingsTab = uitab(app.TabGroup);
-            app.BlockSettingsTab.Title = 'Block Settings';
+            % Create SettingsTab
+            app.SettingsTab = uitab(app.TabGroup);
+            app.SettingsTab.Title = 'Settings';
 
             % Create SymbolRatesymssecEditFieldLabel
-            app.SymbolRatesymssecEditFieldLabel = uilabel(app.BlockSettingsTab);
+            app.SymbolRatesymssecEditFieldLabel = uilabel(app.SettingsTab);
             app.SymbolRatesymssecEditFieldLabel.FontSize = 30;
             app.SymbolRatesymssecEditFieldLabel.Position = [151 515 336 36];
             app.SymbolRatesymssecEditFieldLabel.Text = 'Symbol Rate (syms/sec)';
 
             % Create SymbolRatesymssecEditField
-            app.SymbolRatesymssecEditField = uieditfield(app.BlockSettingsTab, 'numeric');
+            app.SymbolRatesymssecEditField = uieditfield(app.SettingsTab, 'numeric');
             app.SymbolRatesymssecEditField.FontSize = 30;
             app.SymbolRatesymssecEditField.Position = [517 515 100 36];
             app.SymbolRatesymssecEditField.Value = 1000;
 
             % Create ApplyTxCalibrationSwitchLabel
-            app.ApplyTxCalibrationSwitchLabel = uilabel(app.BlockSettingsTab);
+            app.ApplyTxCalibrationSwitchLabel = uilabel(app.SettingsTab);
             app.ApplyTxCalibrationSwitchLabel.HorizontalAlignment = 'center';
             app.ApplyTxCalibrationSwitchLabel.FontSize = 28;
             app.ApplyTxCalibrationSwitchLabel.Position = [118 128 259 34];
             app.ApplyTxCalibrationSwitchLabel.Text = 'Apply Tx Calibration';
 
             % Create ApplyTxCalibrationSwitch
-            app.ApplyTxCalibrationSwitch = uiswitch(app.BlockSettingsTab, 'toggle');
+            app.ApplyTxCalibrationSwitch = uiswitch(app.SettingsTab, 'toggle');
             app.ApplyTxCalibrationSwitch.Orientation = 'horizontal';
             app.ApplyTxCalibrationSwitch.FontSize = 30;
             app.ApplyTxCalibrationSwitch.Position = [229 83 38 16];
             app.ApplyTxCalibrationSwitch.Value = 'On';
 
             % Create ApplyRxCalibrationSwitchLabel
-            app.ApplyRxCalibrationSwitchLabel = uilabel(app.BlockSettingsTab);
+            app.ApplyRxCalibrationSwitchLabel = uilabel(app.SettingsTab);
             app.ApplyRxCalibrationSwitchLabel.HorizontalAlignment = 'center';
             app.ApplyRxCalibrationSwitchLabel.FontSize = 28;
             app.ApplyRxCalibrationSwitchLabel.Position = [389 128 270 34];
             app.ApplyRxCalibrationSwitchLabel.Text = ' Apply Rx Calibration';
 
             % Create ApplyRxCalibrationSwitch
-            app.ApplyRxCalibrationSwitch = uiswitch(app.BlockSettingsTab, 'toggle');
+            app.ApplyRxCalibrationSwitch = uiswitch(app.SettingsTab, 'toggle');
             app.ApplyRxCalibrationSwitch.Orientation = 'horizontal';
             app.ApplyRxCalibrationSwitch.FontSize = 30;
             app.ApplyRxCalibrationSwitch.Position = [502 83 38 16];
             app.ApplyRxCalibrationSwitch.Value = 'On';
 
             % Create SyncPreambleLengthDropDownLabel
-            app.SyncPreambleLengthDropDownLabel = uilabel(app.BlockSettingsTab);
+            app.SyncPreambleLengthDropDownLabel = uilabel(app.SettingsTab);
             app.SyncPreambleLengthDropDownLabel.FontSize = 30;
             app.SyncPreambleLengthDropDownLabel.Position = [152 433 313 36];
             app.SyncPreambleLengthDropDownLabel.Text = 'Sync Preamble Length';
 
             % Create SyncPreambleLengthDropDown
-            app.SyncPreambleLengthDropDown = uidropdown(app.BlockSettingsTab);
+            app.SyncPreambleLengthDropDown = uidropdown(app.SettingsTab);
             app.SyncPreambleLengthDropDown.Items = {'256', '512', '1024', '2048'};
             app.SyncPreambleLengthDropDown.ItemsData = {'256', '512', '1024', '2048'};
             app.SyncPreambleLengthDropDown.FontSize = 30;
@@ -884,13 +854,13 @@ classdef mqamApp < matlab.apps.AppBase
             app.SyncPreambleLengthDropDown.Value = '1024';
 
             % Create RandomDataSeedDropDownLabel
-            app.RandomDataSeedDropDownLabel = uilabel(app.BlockSettingsTab);
+            app.RandomDataSeedDropDownLabel = uilabel(app.SettingsTab);
             app.RandomDataSeedDropDownLabel.FontSize = 30;
             app.RandomDataSeedDropDownLabel.Position = [154 353 272 36];
             app.RandomDataSeedDropDownLabel.Text = 'Random Data Seed';
 
             % Create RandomDataSeedDropDown
-            app.RandomDataSeedDropDown = uidropdown(app.BlockSettingsTab);
+            app.RandomDataSeedDropDown = uidropdown(app.SettingsTab);
             app.RandomDataSeedDropDown.Items = {'A', 'B', 'C'};
             app.RandomDataSeedDropDown.ItemsData = {'32164', '12345', '88888'};
             app.RandomDataSeedDropDown.FontSize = 30;
@@ -898,98 +868,98 @@ classdef mqamApp < matlab.apps.AppBase
             app.RandomDataSeedDropDown.Value = '32164';
 
             % Create DecodeIterationsEditFieldLabel
-            app.DecodeIterationsEditFieldLabel = uilabel(app.BlockSettingsTab);
+            app.DecodeIterationsEditFieldLabel = uilabel(app.SettingsTab);
             app.DecodeIterationsEditFieldLabel.FontSize = 30;
             app.DecodeIterationsEditFieldLabel.Position = [154 273 243 36];
             app.DecodeIterationsEditFieldLabel.Text = 'Decode Iterations';
 
             % Create DecodeIterationsEditField
-            app.DecodeIterationsEditField = uieditfield(app.BlockSettingsTab, 'numeric');
+            app.DecodeIterationsEditField = uieditfield(app.SettingsTab, 'numeric');
             app.DecodeIterationsEditField.FontSize = 30;
             app.DecodeIterationsEditField.Position = [518 273 100 36];
             app.DecodeIterationsEditField.Value = 8;
 
             % Create SimulatedAWGNSNREditFieldLabel
-            app.SimulatedAWGNSNREditFieldLabel = uilabel(app.BlockSettingsTab);
+            app.SimulatedAWGNSNREditFieldLabel = uilabel(app.SettingsTab);
             app.SimulatedAWGNSNREditFieldLabel.FontSize = 30;
             app.SimulatedAWGNSNREditFieldLabel.Position = [154 202 315 36];
             app.SimulatedAWGNSNREditFieldLabel.Text = 'Simulated AWGN SNR';
 
             % Create SimulatedAWGNSNREditField
-            app.SimulatedAWGNSNREditField = uieditfield(app.BlockSettingsTab, 'numeric');
+            app.SimulatedAWGNSNREditField = uieditfield(app.SettingsTab, 'numeric');
             app.SimulatedAWGNSNREditField.FontSize = 30;
             app.SimulatedAWGNSNREditField.Enable = 'off';
             app.SimulatedAWGNSNREditField.Position = [517 198 100 36];
             app.SimulatedAWGNSNREditField.Value = 30;
 
-            % Create RFCalibrationTab
-            app.RFCalibrationTab = uitab(app.TabGroup);
-            app.RFCalibrationTab.Title = 'RF Calibration';
+            % Create TIMSCalibrationTab
+            app.TIMSCalibrationTab = uitab(app.TabGroup);
+            app.TIMSCalibrationTab.Title = 'TIMS Calibration';
 
             % Create RunTxCalibrationButton
-            app.RunTxCalibrationButton = uibutton(app.RFCalibrationTab, 'state');
+            app.RunTxCalibrationButton = uibutton(app.TIMSCalibrationTab, 'state');
             app.RunTxCalibrationButton.ValueChangedFcn = createCallbackFcn(app, @RunTxCalibrationButtonValueChanged, true);
             app.RunTxCalibrationButton.Text = 'Run Tx Calibration';
             app.RunTxCalibrationButton.FontSize = 30;
             app.RunTxCalibrationButton.Position = [260 484 267 43];
 
             % Create AnalogRxFilterTuningButton
-            app.AnalogRxFilterTuningButton = uibutton(app.RFCalibrationTab, 'state');
+            app.AnalogRxFilterTuningButton = uibutton(app.TIMSCalibrationTab, 'state');
             app.AnalogRxFilterTuningButton.ValueChangedFcn = createCallbackFcn(app, @AnalogRxFilterTuningButtonValueChanged, true);
             app.AnalogRxFilterTuningButton.Text = 'Analog Rx Filter Tuning';
             app.AnalogRxFilterTuningButton.FontSize = 30;
             app.AnalogRxFilterTuningButton.Position = [226 305 333 43];
 
             % Create RunRxCalibrationButton
-            app.RunRxCalibrationButton = uibutton(app.RFCalibrationTab, 'state');
+            app.RunRxCalibrationButton = uibutton(app.TIMSCalibrationTab, 'state');
             app.RunRxCalibrationButton.ValueChangedFcn = createCallbackFcn(app, @RunRxCalibrationButtonValueChanged, true);
             app.RunRxCalibrationButton.Text = 'Run Rx Calibration';
             app.RunRxCalibrationButton.FontSize = 30;
             app.RunRxCalibrationButton.Position = [257 133 270 43];
 
-            % Create DeviceSettingsTab
-            app.DeviceSettingsTab = uitab(app.TabGroup);
-            app.DeviceSettingsTab.Title = 'Device Settings';
+            % Create DevicesTab
+            app.DevicesTab = uitab(app.TabGroup);
+            app.DevicesTab.Title = 'Devices';
 
             % Create ScopeDropDownLabel
-            app.ScopeDropDownLabel = uilabel(app.DeviceSettingsTab);
+            app.ScopeDropDownLabel = uilabel(app.DevicesTab);
             app.ScopeDropDownLabel.FontSize = 30;
             app.ScopeDropDownLabel.Position = [34 467 99 36];
             app.ScopeDropDownLabel.Text = 'Scope:';
 
             % Create ScopeDropDown
-            app.ScopeDropDown = uidropdown(app.DeviceSettingsTab);
+            app.ScopeDropDown = uidropdown(app.DevicesTab);
             app.ScopeDropDown.Items = {};
             app.ScopeDropDown.FontSize = 30;
             app.ScopeDropDown.Position = [132 467 615 36];
             app.ScopeDropDown.Value = {};
 
             % Create AWGDropDownLabel
-            app.AWGDropDownLabel = uilabel(app.DeviceSettingsTab);
+            app.AWGDropDownLabel = uilabel(app.DevicesTab);
             app.AWGDropDownLabel.FontSize = 30;
             app.AWGDropDownLabel.Position = [34 352 84 36];
             app.AWGDropDownLabel.Text = 'AWG:';
 
             % Create AWGDropDown
-            app.AWGDropDown = uidropdown(app.DeviceSettingsTab);
+            app.AWGDropDown = uidropdown(app.DevicesTab);
             app.AWGDropDown.Items = {};
             app.AWGDropDown.FontSize = 30;
             app.AWGDropDown.Position = [132 352 615 36];
             app.AWGDropDown.Value = {};
 
             % Create RefreshDeviceListButton
-            app.RefreshDeviceListButton = uibutton(app.DeviceSettingsTab, 'push');
+            app.RefreshDeviceListButton = uibutton(app.DevicesTab, 'push');
             app.RefreshDeviceListButton.ButtonPushedFcn = createCallbackFcn(app, @RefreshDeviceListButtonPushed, true);
             app.RefreshDeviceListButton.FontSize = 30;
             app.RefreshDeviceListButton.Position = [253 111 279 43];
             app.RefreshDeviceListButton.Text = 'Refresh Device List';
 
             % Create RefreshLamp
-            app.RefreshLamp = uilamp(app.DeviceSettingsTab);
+            app.RefreshLamp = uilamp(app.DevicesTab);
             app.RefreshLamp.Position = [725 29 34 34];
 
             % Create EnableSimulatorModeCheckBox
-            app.EnableSimulatorModeCheckBox = uicheckbox(app.DeviceSettingsTab);
+            app.EnableSimulatorModeCheckBox = uicheckbox(app.DevicesTab);
             app.EnableSimulatorModeCheckBox.ValueChangedFcn = createCallbackFcn(app, @EnableSimulatorModeCheckBoxValueChanged, true);
             app.EnableSimulatorModeCheckBox.Text = 'Enable Simulator Mode';
             app.EnableSimulatorModeCheckBox.FontSize = 30;

@@ -51,9 +51,10 @@ end
 
 
 %% Check if Simulation Mode
-global SIM_MODE
-if isempty(SIM_MODE)
+if isempty(rxObj.SIM_MODE)
     SIM_MODE = 0;
+else
+    SIM_MODE = rxObj.SIM_MODE;
 end
 if ~SIM_MODE
     READ_DSO = 1;

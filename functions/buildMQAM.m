@@ -92,11 +92,14 @@ else
     fname = 'uncal';
 end
 
-%% Check For Global Simulation Mode Flag
-global SIM_MODE
-if isempty(SIM_MODE)
+%% Check For Simulation Mode Flag
+
+if isempty(txObj.SIM_MODE)
     SIM_MODE = 0;
+else
+    SIM_MODE = txObj.SIM_MODE;
 end
+
 if SIM_MODE
     % If simulation mode, save waveforms as .MAT file
     dirpath = uigetdir('Signal Files','Select Save Location for M-QAM Tx Simulation File');

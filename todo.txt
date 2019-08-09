@@ -4,8 +4,7 @@ Cannot find 'Data Files' folder when saving uncalibrated data
 readMQAM.m
 Update number of symbols to include preamble for DSO window size
 add DSO vertical scale adjustment
-
-add plot sync function
+remove read dso/load file prompts
 
 buildMQAM.m
 Add variable sps for AWG output
@@ -13,4 +12,6 @@ Add AWG filter selection
 
 mqamApp.m
 Read iteration cancel
-Turbo Block length
+
+turboCodeTesting.m
+puncturing for rate matching
