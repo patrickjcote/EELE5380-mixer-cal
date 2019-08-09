@@ -462,11 +462,14 @@ classdef mqamApp < matlab.apps.AppBase
 %                     app.RunRxCalibrationButton.Enable = 1;
 %                     app.RunTxCalibrationButton.Enable = 1;
 %                     app.AnalogRxFilterTuningButton.Enable = 1;
+                    % Enable AWGN SNR
+                    app.SimulatedAWGNSNREditField.Enable = 1;
                     % Update Status
                     app.Status.Text = 'Entered Simulator Mode';
                 else
                     app.ApplyRxCalibrationSwitch.Value = 'On';
                     app.ApplyTxCalibrationSwitch.Value = 'On';
+                    app.SimulatedAWGNSNREditField.Enable = 0;
                     refreshDevices(app);
                 end               
                 
@@ -915,8 +918,9 @@ classdef mqamApp < matlab.apps.AppBase
             % Create SimulatedAWGNSNREditField
             app.SimulatedAWGNSNREditField = uieditfield(app.BlockSettingsTab, 'numeric');
             app.SimulatedAWGNSNREditField.FontSize = 30;
+            app.SimulatedAWGNSNREditField.Enable = 'off';
             app.SimulatedAWGNSNREditField.Position = [517 198 100 36];
-            app.SimulatedAWGNSNREditField.Value = 100;
+            app.SimulatedAWGNSNREditField.Value = 30;
 
             % Create RFCalibrationTab
             app.RFCalibrationTab = uitab(app.TabGroup);
