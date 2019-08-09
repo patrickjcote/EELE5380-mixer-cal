@@ -35,7 +35,7 @@ try
     M = rxObj.M;
     Fsym = rxObj.Fsym;
     Nsyms = rxObj.Nsyms;
-    TXdataBlock = rxObj.encBits;
+    txFullBlock = rxObj.encBits;
     txBits = rxObj.dataBits;
     RX_CAL = rxObj.rxCal;
     CODING = rxObj.coding;
@@ -63,7 +63,7 @@ end
 
 % Build progress bar
 
-h = waitbar(0,'Connecting to the DSO...','Name',['Receiving ',num2str(readItrs),' blocks']);
+progBar = waitbar(0,'Connecting to the DSO...','Name',['Receiving ',num2str(readItrs),' blocks']);
 
 
 totalErrors = comm.ErrorRate;
@@ -72,7 +72,7 @@ for N_READ = 1:readItrs
     fprintf('Receiving Block %d:\n',N_READ);
     % Update waitbar status
     msg = ['Receiving Block #',num2str(N_READ),'...'];
-    waitbar(0.20*(N_READ/readItrs),h,msg);
+    waitbar(0.20*(N_READ/readItrs),progBar,msg);
     %% Get Data - Read DSO or Load File
     if READ_DSO
         % Check for VISA Address and Type, if none, set defaults
@@ -91,10 +91,10 @@ for N_READ = 1:readItrs
         setDSO(1,Fsym,Nsyms+1024,DSOVisaType,DSOVisaAddr);
         % Read the signal from the DSO
         msg = ['Receiving Block #',num2str(N_READ),' - Reading Channel 1'];
-        waitbar(0.40*(N_READ/readItrs),h,msg);
+        waitbar(0.40*(N_READ/readItrs),progBar,msg);
         [ Irx, ~ ] = readDSO(1,1,DSOVisaType,DSOVisaAddr);
         msg = ['Receiving Block #',num2str(N_READ),' - Reading Channel 2'];
-        waitbar(0.60*(N_READ/readItrs),h,msg);
+        waitbar(0.60*(N_READ/readItrs),progBar,msg);
         [ Qrx, tq ] = readDSO(2,0,DSOVisaType,DSOVisaAddr);
         % Save The Data
         save(['Data Files\rxMqam_',num2str(M),'.mat'],'Irx','Qrx','tq');
@@ -129,22 +129,10 @@ for N_READ = 1:readItrs
     % Filter Signals
     Irx = filter(b,1,Irx);
     Qrx = filter(b,1,Qrx);
-       
-%     %% Sim Mode Add Noise
-%     if SNRADD<100
-%         clockSeed = clock;
-%         rng(N_READ + round(clockSeed(6))*round(clockSeed(5)));
-%         Crx = Irx + 1i*Qrx;
-% %       Crx = awgn(Crx,SNRADD,'measured');
-%         channel = comm.AWGNChannel('NoiseMethod','Signal to noise ratio (SNR)','SNR',SNRADD);
-%         Crx = channel(Crx);
-%         Irx = real(Crx);
-%         Qrx = imag(Crx);
-%     end
-    
+          
     %% Frame Sync
     msg = ['Receiving Block #',num2str(N_READ),' - Synchronizing'];
-    waitbar(0.70*(N_READ/readItrs),h,msg);
+    waitbar(0.70*(N_READ/readItrs),progBar,msg);
     % Build known sent symbols to use in synchronization
     syncSyms = ([mSeq(preM,preTaps);1]*2-1)*exp(1i*pi/4);               % Preamble M-sequence
     % Synchronize and slice
@@ -170,7 +158,7 @@ for N_READ = 1:readItrs
     dataSymsRx = dataSymsRx.*exp(-1i*phaseOffset*pi/180);
     
         %% Sim Mode Add Noise
-    if SNRADD<100
+    if SIM_MODE
         clockSeed = clock;
         rng(N_READ + round(clockSeed(6))*round(clockSeed(5)));
         channel = comm.AWGNChannel('NoiseMethod','Signal to noise ratio (SNR)','SNR',SNRADD);
@@ -184,18 +172,19 @@ for N_READ = 1:readItrs
     
     %% Demodulate and Decode
     msg = ['Receiving Block #',num2str(N_READ),' - Demod and Decod'];
-    waitbar(0.90*(N_READ/readItrs),h,msg);
+    waitbar(0.90*(N_READ/readItrs),progBar,msg);
+    
+    rxFullBlock = qamdemod(dataSymsRx,M,'OutputType','bit','UnitAveragePower',true);
+    
     codeType = 'Uncoded';
-    if ~CODING
-        rxBitsFull = qamdemod(dataSymsRx,M,'OutputType','bit','UnitAveragePower',true);
-        
+    if ~CODING   
         % Remove padding
-        if(mod(length(TXdataBlock),log2(M)))
-            padBitsRx = log2(M)-mod(length(TXdataBlock),log2(M));
+        if(mod(length(txFullBlock),log2(M)))
+            padBitsRx = log2(M)-mod(length(txFullBlock),log2(M));
         else
             padBitsRx = 0;
         end
-        rxBits = rxBitsFull(1:end-padBitsRx);
+        rxBits = rxFullBlock(1:end-padBitsRx);
         
     else
         noiseVar = 10.^(-SNR/10);
@@ -204,8 +193,8 @@ for N_READ = 1:readItrs
         end
         
         % Remove padding
-        if(mod(length(TXdataBlock),log2(M)))
-            padBitsRx = log2(M)-mod(length(TXdataBlock),log2(M));
+        if(mod(length(txFullBlock),log2(M)))
+            padBitsRx = log2(M)-mod(length(txFullBlock),log2(M));
         else
             padBitsRx = 0;
         end
@@ -234,7 +223,7 @@ for N_READ = 1:readItrs
     %% Calculate BER
     % Update Progress Bar
     msg = ['Receiving Block #',num2str(N_READ),' - Calculating Bit Errors'];
-    waitbar(0.95*(N_READ/readItrs),h,msg);
+    waitbar(0.95*(N_READ/readItrs),progBar,msg);
     totalErrorStats = totalErrors(txBits,rxBits);
     if sum(txBits ~= rxBits)
         blockErrs = blockErrs+1;
@@ -248,11 +237,11 @@ for N_READ = 1:readItrs
     
     % Update Progress Bar
     msg = ['Receiving Block #',num2str(N_READ),' - Successful'];
-    waitbar(1*(N_READ/readItrs),h,msg);
+    waitbar(1*(N_READ/readItrs),progBar,msg);
 end
 
 % Close Progress Bar
-close(h);           % close status bar
+close(progBar);           % close status bar
 
 %% Load Error Stats
 BER = totalErrorStats(1);
@@ -279,16 +268,25 @@ clear mBox
 %% Plot Received Symbols and Symbols in Error
 % TODO: Think about symbols in error when FEC coding is used
 % Find bit errors
-errs = (rxBits ~= txBits);
+errs = (rxFullBlock ~= txFullBlock);
 % Calculate a symbol index for each bit error
 ndx = ceil(find(errs==1)/log2(M));
+% Build Ideal symbols
+intsIdeal = 0:M-1;
+symsIdeal  = qammod(intsIdeal,M,'InputType','Integer','UnitAveragePower',true);
 % Plot
 figure('name',[num2str(M),'-QAM ',codeType,' @ SNR: ',num2str(SNR),' dB'],'NumberTitle','off')
 hold on;
+plot(real(symsIdeal),imag(symsIdeal),'go','MarkerSize',5)
 plot(real(dataSymsRx),imag(dataSymsRx),'.','MarkerSize',10)
 plot(real(dataSymsRx(ndx)),imag(dataSymsRx(ndx)),'r*','MarkerSize',15)
 pbaspect([1 1 1]);
 axis([-1.1 1.1 -1.1 1.1]*max(abs(dataSymsRx)));
+if sum(errs)
+legend('Ideal Symbol','Rx Symbol','Symbol Error')
+else
+    legend('Ideal Symbol','Rx Symbol');
+end
 xlabel('I');ylabel('Q');
 titleBER = {[num2str(M),'-QAM ',codeType,' @ SNR: ',num2str(SNR),' dB'];
     ['BER: ',num2str(BER),'   BLER: ',num2str(BLER),'    Total Errors:   ',num2str(bit_errors),'   Total Bits:    ',num2str(totalBits)];
