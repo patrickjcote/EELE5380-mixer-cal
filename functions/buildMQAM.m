@@ -108,7 +108,7 @@ if SIM_MODE
     Irx = [awgn(zeros(N,1),10);Itx;Itx];
     Qrx = [awgn(zeros(N,1),10);Qtx;Qtx];
     tq = (0:length(Irx)-1)'/(sps*Fsym);
-    fileName = [dirpath,'\',num2str(M),'Q_i_',fname];
+    fileName = [dirpath,'\',num2str(M),'Q_',fname];
     save(fileName,'Irx','Qrx','tq');
     
     return
