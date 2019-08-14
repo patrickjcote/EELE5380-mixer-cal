@@ -1,4 +1,4 @@
-function [encBlock,dataBits] = turbEncode(dataLen,rng_seed,rateNdx)
+function [encBlock] = turbEncode(dataBits,rateNdx)
 %% turbEncode.m
 %
 %	This function convolutionally encodes a the supplied dataBlock.
@@ -18,15 +18,13 @@ function [encBlock,dataBits] = turbEncode(dataLen,rng_seed,rateNdx)
 % EELE 5380 - Adv. Signals and Systems
 
 %%
-rng(rng_seed);          % Random Seed
-dataBits = randi([0 1],dataLen,1);
 % Load Encoder objects
 hTEnc = comm.TurboEncoder('InterleaverIndicesSource','Input port');
 % Build Interleave Indices
 rng(6541);    % Interleave randomperm seed
-intrlvNdx = randperm(dataLen);
+intrlvNdx = randperm(length(dataBits));
 % Encode Data
-encBlock = hTEnc(dataBits,intrlvNdx);
+encBits = hTEnc(dataBits,intrlvNdx);
 
 %% Load Puncture Pattern
 if exist('rateNdx','var')
@@ -38,20 +36,21 @@ if exist('rateNdx','var')
         case 2
             disp('2/3 rate puncture');
             % 1/3 -> 2/3 rate
-            punctPattern = [1 1 0 1 0 0 1 0 0 1 0 1];
+            punctPattern = [1 1 0 1 0 0 1 0 1 1 0 0];
         case 3
             disp('3/4 rate puncture')
-            punctPattern = [1 1 0 1 0 0 1 0 0 1 0 1 1 0 0 1 0 0];
+            punctPattern = [1 1 0  1 0 0  1 0 0    1 0 1  1 0 0  1 0 0];
 
         case 4
             disp('5/6 rate puncture');
             punctPattern = [1 1 1 0 0 1 1 0 0 1];
         otherwise
             disp('Rate 1/3. No puncture.');
+            encBlock = encBits;
             return
     end
     
-    encBlock = puncture(encBlock,punctPattern);
+    encBlock = puncture(encBits,punctPattern);
 
 end
 

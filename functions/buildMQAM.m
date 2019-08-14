@@ -28,10 +28,12 @@ function [] = buildMQAM(txObj,filtType,AWGVisaType,AWGVisaAddress)
 try
     M = txObj.M;
     Fsym = txObj.Fsym;
-    encBits = txObj.encBits;
+    FECtype = txObj.FEC;
+    rate = txObj.rate;
+    blockLen = txObj.blockLen;
+    rngSeed = txObj.rng;
     TX_CAL = txObj.txCal;
-    preM = txObj.preM;
-    preTaps = txObj.preTaps;
+    preambLen = txObj.preambLen;
 catch
     error('Tx Object not properly initialized.');
 end
@@ -61,11 +63,41 @@ end
 
 sps = 50;           % Samples per Symbol        [Samp/sym]
 
-%% Build BPSK Preamble and Modulated Data Block
-preamble = ([mSeq(preM,preTaps);1]*2-1);               % Preamble M-sequence
 
-preamble = preamble*exp(1i*pi/4);
-% Add padding
+%% Build Data
+try
+    [encBits, ~] = buildencBlock(blockLen,FECtype,rate,rngSeed);
+catch ME
+    warning('Error Running buildencBlock');
+    warning(ME.message);
+    return
+end
+
+%% Build BPSK Preamble and Modulated Data Block
+% Load Preamble Length, Set M-seq order and taps
+switch preambLen
+    case 256
+        preM = 8;
+        preTaps = [8, 6, 5, 4];
+    case 512
+        preM = 9;
+        preTaps = [9, 8, 6, 5];
+    case 1024
+        preM = 10;
+        preTaps = [10, 9, 7, 6];
+    case 2048
+        preM = 11;
+        preTaps = [11, 10, 9, 7];
+    otherwise
+        preM = 10;
+        preTaps = [10, 9, 7, 6];
+end
+
+preamble = ([mSeq(preM,preTaps);1]*2-1);    % Preamble M-sequence
+
+preamble = preamble*exp(1i*pi/4);           % Rotate Preamble
+
+% Add padding if necessary to fill constellations
 if(mod(length(encBits),log2(M)))
     padBits = log2(M)-mod(length(encBits),log2(M))
 else
@@ -141,7 +173,7 @@ if WRITE_TO_DISK
     if ~dirpath
         error('Build M-QAM Tx Files Operation Cancled by User');
     end
-        
+    
     % Build AWG Files
     writeArbFile([dirpath,'\',num2str(M),'Q_i_',fname],Itx,Fsamp);
     writeArbFile([dirpath,'\',num2str(M),'Q_q_',fname],Qtx,Fsamp);

@@ -18,8 +18,7 @@ function [dataBits] = turbDecode(llrs,blockLen,numIts,rateNdx,llrVal)
 
 %% Load Puncture Pattern
 if exist('rateNdx','var')
-
-        
+ 
     if ~exist('llrVal','var')
         llrVal = 0;
     end
@@ -28,20 +27,20 @@ if exist('rateNdx','var')
         case 1
             disp('1/2 rate puncture');
             punctPattern = [1 1 0 1 0 1];
-            llrs = puncture(llrs,punctPattern,llrVal);
+            llrs = puncture(llrs,punctPattern,llrVal)';
         case 2
             disp('2/3 rate puncture');
             % 1/3 -> 2/3 rate
             punctPattern = [1 1 0 1 0 0 1 0 0 1 0 1];
-            llrs = puncture(llrs,punctPattern,llrVal);
+            llrs = puncture(llrs,punctPattern,llrVal)';
         case 3
             disp('3/4 rate puncture')
             punctPattern = [1 1 0 1 0 0 1 0 0 1 0 1 1 0 0 1 0 0];
-            llrs = puncture(llrs,punctPattern,llrVal);
+            llrs = puncture(llrs,punctPattern,llrVal)';
         case 4
             disp('5/6 rate puncture');
             punctPattern = [1 1 1 0 0 1 1 0 0 1];
-            llrs = puncture(llrs,punctPattern,llrVal);
+            llrs = puncture(llrs,punctPattern,llrVal)';
         otherwise
             disp('Rate 1/3. No puncture.');     
     end

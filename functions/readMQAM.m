@@ -35,18 +35,28 @@ try
     M = rxObj.M;
     Fsym = rxObj.Fsym;
     Nsyms = rxObj.Nsyms;
-    txFullBlock = rxObj.encBits;
-    txBits = rxObj.dataBits;
     RX_CAL = rxObj.rxCal;
     CODING = rxObj.coding;
-    preM = rxObj.preM;
-    preTaps = rxObj.preTaps;
+    preambLen = rxObj.preambLen;
     itrs = rxObj.itrs;
     readItrs = rxObj.readItrs;
     SNRADD = rxObj.awgnSNR;
+    FECtype = rxObj.FEC;
+    rate = rxObj.rate;
+    blockLen = rxObj.blockLen;
+    rngSeed = rxObj.rng;
     
 catch
     error('Rx Object not properly initialized.');
+end
+
+%% Build Data
+try
+    [txEncBits, txDataBits] = buildencBlock(blockLen,FECtype,rate,rngSeed);
+catch ME
+    warning('Error Running buildencBlock');
+    warning(ME.message);
+    return
 end
 
 
@@ -134,6 +144,26 @@ for N_READ = 1:readItrs
     %% Frame Sync
     msg = ['Receiving Block #',num2str(N_READ),' - Synchronizing'];
     waitbar(0.70*(N_READ/readItrs),progBar,msg);
+    
+    % Load Preamble Length, Set M-seq order and taps
+    switch preambLen
+        case 256
+            preM = 8;
+            preTaps = [8, 6, 5, 4];
+        case 512
+            preM = 9;
+            preTaps = [9, 8, 6, 5];
+        case 1024
+            preM = 10;
+            preTaps = [10, 9, 7, 6];
+        case 2048
+            preM = 11;
+            preTaps = [11, 10, 9, 7];
+        otherwise
+            preM = 10;
+            preTaps = [10, 9, 7, 6];
+    end
+
     % Build known sent symbols to use in synchronization
     syncSyms = ([mSeq(preM,preTaps);1]*2-1)*exp(1i*pi/4);               % Preamble M-sequence
     % Synchronize and slice
@@ -180,8 +210,8 @@ for N_READ = 1:readItrs
     codeType = 'Uncoded';
     if ~CODING   
         % Remove padding
-        if(mod(length(txFullBlock),log2(M)))
-            padBitsRx = log2(M)-mod(length(txFullBlock),log2(M));
+        if(mod(length(txEncBits),log2(M)))
+            padBitsRx = log2(M)-mod(length(txEncBits),log2(M));
         else
             padBitsRx = 0;
         end
@@ -194,8 +224,8 @@ for N_READ = 1:readItrs
         end
         
         % Remove padding
-        if(mod(length(txFullBlock),log2(M)))
-            padBitsRx = log2(M)-mod(length(txFullBlock),log2(M));
+        if(mod(length(txEncBits),log2(M)))
+            padBitsRx = log2(M)-mod(length(txEncBits),log2(M));
         else
             padBitsRx = 0;
         end
@@ -204,20 +234,20 @@ for N_READ = 1:readItrs
             % conv decode
             rxLLRsFull = qamdemod(dataSymsRx,M,'OutputType','approxllr','UnitAveragePower',true);
             rxLLRs = rxLLRsFull(1:end-padBitsRx);
-            rxBits = convDecode(rxLLRs,rxObj.rate);
-            codeType = ['Conv. Coded. Rate ',ratesVec{rxObj.rate}];
+            rxBits = convDecode(rxLLRs,rate);
+            codeType = ['Conv. Coded. Rate ',ratesVec{rate}];
         elseif CODING == 2
             % LDPC decode
             rxLLRsFull = qamdemod(dataSymsRx,M,'OutputType','llr','UnitAveragePower',true,'NoiseVariance',noiseVar);
             rxLLRs = rxLLRsFull(1:end-padBitsRx);
-            rxBits = double(ldpcDecode(rxLLRs,rxObj.blockLen,rxObj.rate,itrs));
-            codeType = ['LDPC Coded. Rate ',ratesVec{rxObj.rate}];
+            rxBits = double(ldpcDecode(rxLLRs,blockLen,rate,itrs));
+            codeType = ['LDPC Coded. Rate ',ratesVec{rate}];
         elseif CODING == 3
             % turbo decode
             rxLLRsFull = qamdemod(dataSymsRx,M,'OutputType','approxllr','UnitAveragePower',true,'NoiseVariance',noiseVar);
-            rxLLRs = rxLLRsFull(1:end-padBitsRx);
-            rxBits = turbDecode(rxLLRs,length(txBits),itrs,rxObj.rate,0);
-            codeType = ['Turbo Coded. Rate ',ratesVec{rxObj.rate}];
+            rxLLRs = rxLLRsFull(1:(length(txEncBits)));
+            rxBits = turbDecode(rxLLRs,length(txDataBits),itrs,rate,0);
+            codeType = ['Turbo Coded. Rate ',ratesVec{rate}];
         end
     end
     
@@ -225,13 +255,13 @@ for N_READ = 1:readItrs
     % Update Progress Bar
     msg = ['Receiving Block #',num2str(N_READ),' - Calculating Bit Errors'];
     waitbar(0.95*(N_READ/readItrs),progBar,msg);
-    totalErrorStats = totalErrors(txBits,rxBits);
-    if sum(txBits ~= rxBits)
+    totalErrorStats = totalErrors(txDataBits,rxBits);
+    if sum(txDataBits ~= rxBits)
         blockErrs = blockErrs+1;
     end
     
     itrErrors = comm.ErrorRate;
-    itrErrorStats = itrErrors(txBits,rxBits);
+    itrErrorStats = itrErrors(txDataBits,rxBits);
     BER = itrErrorStats(1)
     bit_errors = itrErrorStats(2)
     totalBits = itrErrorStats(3)
@@ -267,9 +297,8 @@ mBox.Message = {'\fontsize{20}';
 clear mBox
 
 %% Plot Received Symbols and Symbols in Error
-% TODO: Think about symbols in error when FEC coding is used
 % Find bit errors
-errs = (rxFullBlock ~= txFullBlock);
+errs = (rxFullBlock(1:length(txEncBits)) ~= txEncBits);
 % Calculate a symbol index for each bit error
 ndx = ceil(find(errs==1)/log2(M));
 % Build Ideal symbols
@@ -290,7 +319,7 @@ else
 end
 xlabel('I');ylabel('Q');
 titleBER = {[num2str(M),'-QAM ',codeType,' @ SNR: ',num2str(SNR),' dB'];
-    ['BER: ',num2str(BER),'   BLER: ',num2str(BLER),'    Total Errors:   ',num2str(bit_errors),'   Total Bits:    ',num2str(totalBits)];
+    ['BER: ',num2str(BER),'   BLER: ',num2str(BLER),'    Total Errors:   ',num2str(bit_errors),'   Total Data Bits:    ',num2str(totalBits)];
     };
 title(titleBER);
 grid on; grid minor;
