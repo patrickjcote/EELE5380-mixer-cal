@@ -181,7 +181,8 @@ classdef mqamApp < matlab.apps.AppBase
                     rate = str2num(app.RateDropDown.Value);
                     [encBlock, dataBits] = ldpcEncode(blockLen,rate,rng_seed);
                 case 'Turbo'
-                    [encBlock, dataBits] = turbEncode((blockLen-12)/3,rng_seed);
+                    rate = str2num(app.RateDropDown.Value);
+                    [encBlock, dataBits] = turbEncode((blockLen-12)/3,rng_seed,rate);
                 otherwise
                     rng(rng_seed);          % Random Seed
                     dataBits = randi([0 1],blockLen,1);
@@ -501,8 +502,8 @@ classdef mqamApp < matlab.apps.AppBase
                     app.RateDropDownLabel.Visible = 1;
                     app.BlockLengthDropDown.Editable = 1;
                     app.RateDropDown.Editable = 0;
-                    app.RateDropDown.Items = {'1/3'};
-                    app.RateDropDown.ItemsData = {'5'};
+                    app.RateDropDown.Items = {'1/3','1/2','2/3','3/4','5/6'};
+                    app.RateDropDown.ItemsData = {'5','1', '2', '3', '4'};
                     app.DecodeIterationsEditField.Value = 8;
                 otherwise
                     app.RateDropDown.Visible = 0;

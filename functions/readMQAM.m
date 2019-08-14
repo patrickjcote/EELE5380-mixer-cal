@@ -216,7 +216,7 @@ for N_READ = 1:readItrs
             % turbo decode
             rxLLRsFull = qamdemod(dataSymsRx,M,'OutputType','approxllr','UnitAveragePower',true,'NoiseVariance',noiseVar);
             rxLLRs = rxLLRsFull(1:end-padBitsRx);
-            rxBits = turbDecode(rxLLRs,length(txBits),itrs);
+            rxBits = turbDecode(rxLLRs,length(txBits),itrs,rxObj.rate,0);
             codeType = ['Turbo Coded. Rate ',ratesVec{rxObj.rate}];
         end
     end
