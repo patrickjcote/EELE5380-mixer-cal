@@ -78,6 +78,7 @@ progBar = waitbar(0,'Connecting to the DSO...','Name',['Receiving ',num2str(read
 
 
 totalErrors = comm.ErrorRate;
+totalSymErrs = 0;
 blockErrs = 0;
 for N_READ = 1:readItrs
     fprintf('Receiving Block %d:\n',N_READ);
@@ -188,7 +189,7 @@ for N_READ = 1:readItrs
     preRx = preRx.*exp(-1i*phaseOffset*pi/180);
     dataSymsRx = dataSymsRx.*exp(-1i*phaseOffset*pi/180);
     
-        %% Sim Mode Add Noise
+    %% Sim Mode Add Noise
     if SIM_MODE
         clockSeed = clock;
         rng(N_READ + round(clockSeed(6))*round(clockSeed(5)));
@@ -266,6 +267,15 @@ for N_READ = 1:readItrs
     bit_errors = itrErrorStats(2)
     totalBits = itrErrorStats(3)
     
+    % Find bit errors
+    errs = (rxFullBlock(1:length(txEncBits)) ~= txEncBits);
+    % Calculate a symbol index for each bit error
+    ndx = ceil(find(errs==1)/log2(M));
+    % Calc Received Symbol Error Rate
+    itrSymsErrs = length(unique(ndx));
+    totalSymErrs = totalSymErrs + itrSymsErrs;
+    RSER = itrSymsErrs/length(dataSymsRx)*100
+    
     % Update Progress Bar
     msg = ['Receiving Block #',num2str(N_READ),' - Successful'];
     waitbar(1*(N_READ/readItrs),progBar,msg);
@@ -274,33 +284,15 @@ end
 % Close Progress Bar
 close(progBar);           % close status bar
 
-%% Load Error Stats
+%% Error Stats
 BER = totalErrorStats(1);
 bit_errors = totalErrorStats(2);
 totalBits = totalErrorStats(3);
-BLER = blockErrs/readItrs;
+BLER = blockErrs/readItrs*100;
+RSER = totalSymErrs/(readItrs*blockLen)*100;
 
-%% Report SNR and BER Stats
-mBox.Interpreter = 'tex';
-mBox.WindowStyle = 'replace';
-mBox.Message = {'\fontsize{20}';
-    ['SNR:         ',num2str(SNR),' dB'];
-    ' ';
-    '\bfError Stats:\rm\fontsize{15}';
-    ['     BER:             ',num2str(BER)];
-    ['     BLER:           ',num2str(BLER)];
-    ['     Total Errors:   ',num2str(bit_errors)];
-    ['     Total Bits:    ',num2str(totalBits)];
-    ' ';
-    };
-% msgbox(mBox.Message,'Results',mBox);
-clear mBox
 
 %% Plot Received Symbols and Symbols in Error
-% Find bit errors
-errs = (rxFullBlock(1:length(txEncBits)) ~= txEncBits);
-% Calculate a symbol index for each bit error
-ndx = ceil(find(errs==1)/log2(M));
 % Build Ideal symbols
 intsIdeal = 0:M-1;
 symsIdeal  = qammod(intsIdeal,M,'InputType','Integer','UnitAveragePower',true);
@@ -319,7 +311,8 @@ else
 end
 xlabel('I');ylabel('Q');
 titleBER = {[num2str(M),'-QAM ',codeType,' @ SNR: ',num2str(SNR),' dB'];
-    ['BER: ',num2str(BER),'   BLER: ',num2str(BLER),'    Total Errors:   ',num2str(bit_errors),'   Total Data Bits:    ',num2str(totalBits)];
+    ['BER: ',num2str(BER,'%.2e'),'     BLER: ',num2str(BLER,'%.2f'),'%       RSER: ',num2str(RSER,'%.2f'),'%'];...
+    ['Total Bit Errors:   ',num2str(bit_errors),'        Total Data Bits:    ',num2str(totalBits)];
     };
 title(titleBER);
 grid on; grid minor;

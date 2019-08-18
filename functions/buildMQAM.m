@@ -119,9 +119,9 @@ if TX_CAL
     txCorrected = Ainv*[(Itx-Idc)';(Qtx-Qdc)'];
     Itx = txCorrected(1,:)';
     Qtx = txCorrected(2,:)';
-    fname = 'cald';
+    fnameCal = 'cald';
 else
-    fname = 'uncal';
+    fnameCal = 'uncal';
 end
 
 %% Check For Simulation Mode Flag
@@ -143,7 +143,13 @@ if SIM_MODE
     Irx = [awgn(zeros(N,1),10);Itx;Itx];
     Qrx = [awgn(zeros(N,1),10);Qtx;Qtx];
     tq = (0:length(Irx)-1)'/(sps*Fsym);
-    fileName = [dirpath,'\',num2str(M),'Q_',fname];
+    
+    if strcmp(FECtype,'None')
+        rate = 6;
+        FECtype = 'Uncoded';
+    end
+    rateVec = {'0.50','0.66','0.75','0.83','0.33','1'};
+    fileName = [dirpath,'\',num2str(M),'Q_',FECtype,'_r',rateVec{rate},'_',num2str(blockLen),'.mat'];
     save(fileName,'Irx','Qrx','tq');
     
     return
@@ -175,8 +181,8 @@ if WRITE_TO_DISK
     end
     
     % Build AWG Files
-    writeArbFile([dirpath,'\',num2str(M),'Q_i_',fname],Itx,Fsamp);
-    writeArbFile([dirpath,'\',num2str(M),'Q_q_',fname],Qtx,Fsamp);
+    writeArbFile([dirpath,'\',num2str(M),'Q_i_',fnameCal],Itx,Fsamp);
+    writeArbFile([dirpath,'\',num2str(M),'Q_q_',fnameCal],Qtx,Fsamp);
     disp('ARB build complete...');
     t = length(Itx)/Fsamp;
     fprintf('Frame Length: %.3f seconds\n',t)

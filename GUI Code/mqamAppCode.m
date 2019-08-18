@@ -2,7 +2,7 @@ classdef mqamApp < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
-        TIMSMQAMv085UIFigure            matlab.ui.Figure
+        TIMSMQAMv095UIFigure            matlab.ui.Figure
         TabGroup                        matlab.ui.container.TabGroup
         TxRxTab                         matlab.ui.container.Tab
         TransmitButton                  matlab.ui.control.StateButton
@@ -32,12 +32,10 @@ classdef mqamApp < matlab.apps.AppBase
         ApplyRxCalibrationSwitch        matlab.ui.control.ToggleSwitch
         SyncPreambleLengthDropDownLabel  matlab.ui.control.Label
         SyncPreambleLengthDropDown      matlab.ui.control.DropDown
-        RandomDataSeedDropDownLabel     matlab.ui.control.Label
-        RandomDataSeedDropDown          matlab.ui.control.DropDown
         DecodeIterationsEditFieldLabel  matlab.ui.control.Label
         DecodeIterationsEditField       matlab.ui.control.NumericEditField
-        SimulatedAWGNSNREditFieldLabel  matlab.ui.control.Label
-        SimulatedAWGNSNREditField       matlab.ui.control.NumericEditField
+        SimulatedSNRdBEditFieldLabel    matlab.ui.control.Label
+        SimulatedSNRdBEditField         matlab.ui.control.NumericEditField
         TIMSCalibrationTab              matlab.ui.container.Tab
         RunTxCalibrationButton          matlab.ui.control.StateButton
         AnalogRxFilterTuningButton      matlab.ui.control.StateButton
@@ -50,6 +48,8 @@ classdef mqamApp < matlab.apps.AppBase
         RefreshDeviceListButton         matlab.ui.control.Button
         RefreshLamp                     matlab.ui.control.Lamp
         EnableSimulatorModeCheckBox     matlab.ui.control.CheckBox
+        RandomDataSeedDropDownLabel     matlab.ui.control.Label
+        RandomDataSeedDropDown          matlab.ui.control.DropDown
     end
 
     
@@ -140,80 +140,10 @@ classdef mqamApp < matlab.apps.AppBase
             end
             
         end
-        
-        function [encBlock, dataBits] = buildencBlock(app)
-            
-            selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
-            
-            M = str2num(app.QAMOrderDropDown.Value);
-            rng_seed = str2num(app.RandomDataSeedDropDown.Value);
-            blockLen = str2num(app.BlockLengthDropDown.Value);
-            switch selectedButton.Text
-                case 'None' % No channel coding
-                    rng(rng_seed);          % Random Seed
-                    dataBits = randi([0 1],blockLen,1);
-                    encBlock = dataBits;
-                case 'Convolutional'
-                    % Convolutional Coding
-                    % Load Rate
-                    rate = str2num(app.RateDropDown.Value);
-                    
-                    switch rate
-                        case 3
-                            r = 3/4;
-                        case 2
-                            r = 2/3;
-                        case 4
-                            r = 5/6;
-                        otherwise
-                            r = 1/2;
-                    end
-                    
-                    NdataBits = blockLen*r;
-                    rng(rng_seed);          % Random Seed
-                    dataBits = randi([0 1],NdataBits,1);
-                    % Tail bits to flush the encoder
-                    dataBits(end-31:end) = zeros(32,1);
-                    encBlock = convEncode(dataBits,rate);
-                    
-                    
-                case 'LDPC'
-                    rate = str2num(app.RateDropDown.Value);
-                    [encBlock, dataBits] = ldpcEncode(blockLen,rate,rng_seed);
-                case 'Turbo'
-                    rate = str2num(app.RateDropDown.Value);
-                    [encBlock, dataBits] = turbEncode((blockLen-12)/3,rng_seed,rate);
-                otherwise
-                    rng(rng_seed);          % Random Seed
-                    dataBits = randi([0 1],blockLen,1);
-                    encBlock = dataBits;
-            end
-            
-        end
-        
-        function results = berCheck(app,dataRx)
-            %% Error Calc
-            errs = sum(dataRx ~= dataTx)
-            BER = errs/length(dataRx);
-            
-            disp(['BER: ',num2str(BER)]);
-            
-            %% Plot
-            figure;
-            errs = dataRx ~= dataTx;
-            ndx = ceil(find(errs==1)/log2(M));
-            plot(real(symsRx),imag(symsRx),'.',real(symsRx(ndx)),imag(symsRx(ndx)),'r.')
-            pbaspect([1 1 1]);
-            axis([-1.5 1.5 -1.5 1.5]);
-            xlabel('I');ylabel('Q');
-            title('Received Constellation');
-            grid on; grid minor;
-            
-        end
-        
+
         function [] = calcDataRate(app)
             symRate = app.SymbolRatesymssecEditField.Value;
-            bpSym = log2(str2num(app.QAMOrderDropDown.Value));
+            bitsPerSym = log2(str2num(app.QAMOrderDropDown.Value));
             
             selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
             
@@ -225,8 +155,7 @@ classdef mqamApp < matlab.apps.AppBase
                     codeRate = ratesVec(str2num(app.RateDropDown.Value));
             end
             
-            
-            dataRate = symRate*bpSym*codeRate;
+            dataRate = symRate*bitsPerSym*codeRate;
             
             app.DataRateTxt.Text = [num2str(dataRate), ' bit/s'];
         end
@@ -258,12 +187,14 @@ classdef mqamApp < matlab.apps.AppBase
         % Value changed function: TransmitButton
         function TransmitButtonValueChanged(app, event)
             
+            % Set app status
             app.Status.Text = 'Starting Transmit...';
             app.Status.FontColor = 'Black';
             
-            
+            % Check SIM Mode
             txObj.SIM_MODE = app.EnableSimulatorModeCheckBox.Value;
             
+            % Load VISA types
             if ~txObj.SIM_MODE
                 AWGVisa = app.AWGDropDown.Value;
                 AWGVisaType = AWGVisa.type;
@@ -273,7 +204,7 @@ classdef mqamApp < matlab.apps.AppBase
                 AWGVisaAddr = '';
             end
             
-            
+            % Check Apply Transmit Calibration
             switch app.ApplyTxCalibrationSwitch.Value
                 case 'Off'
                     TX_CAL = 0;
@@ -283,42 +214,15 @@ classdef mqamApp < matlab.apps.AppBase
             
             % Load Tx Object
             txObj.Fsym = app.SymbolRatesymssecEditField.Value;
-            
-            try
-                [encBlock, dataBits] = buildencBlock(app);
-            catch ME
-                warning('Error Running buildencBlock');
-                warning(ME.message);
-                app.Status.Text = 'An Error Occured. Check Command Window for details.';
-                app.Status.FontColor = [0.64 0.08 0.18];
-                return
-            end
-            
-            
-            txObj.encBits = encBlock;
-            txObj.dataBits = dataBits;
             txObj.txCal = TX_CAL;
             txObj.M = str2num(app.QAMOrderDropDown.Value);
             txObj.itrs = app.DecodeIterationsEditField.Value;
-            
-            % Load Preamble Length, Set M-seq order and taps
-            switch str2num(app.SyncPreambleLengthDropDown.Value)
-                case 256
-                    txObj.preM = 8;
-                    txObj.preTaps = [8, 6, 5, 4];
-                case 512
-                    txObj.preM = 9;
-                    txObj.preTaps = [9, 8, 6, 5];
-                case 1024
-                    txObj.preM = 10;
-                    txObj.preTaps = [10, 9, 7, 6];
-                case 2048
-                    txObj.preM = 11;
-                    txObj.preTaps = [11, 10, 9, 7];
-                otherwise
-                    txObj.preM = 10;
-                    txObj.preTaps = [10, 9, 7, 6];
-            end
+            txObj.FEC = app.ForwardErrorCorrectionButtonGroup.SelectedObject.Text;
+            txObj.rate = str2num(app.RateDropDown.Value);
+            txObj.preambLen = str2num(app.SyncPreambleLengthDropDown.Value);
+            txObj.rng = str2num(app.RandomDataSeedDropDown.Value);
+            txObj.blockLen = str2num(app.BlockLengthDropDown.Value);
+
             
             try
                 buildMQAM(txObj,2,AWGVisaType,AWGVisaAddr);
@@ -336,8 +240,8 @@ classdef mqamApp < matlab.apps.AppBase
             app.TransmitButton.Value = 0;
             
             % Disable/Enable visablity to bring app window back to the foreground
-            app.TIMSMQAMv085UIFigure.Visible = 0;
-            app.TIMSMQAMv085UIFigure.Visible = 1;
+            app.TIMSMQAMv095UIFigure.Visible = 0;
+            app.TIMSMQAMv095UIFigure.Visible = 1;
             
         end
 
@@ -371,33 +275,17 @@ classdef mqamApp < matlab.apps.AppBase
             rxObj.M = str2num(app.QAMOrderDropDown.Value);
             rxObj.itrs = app.DecodeIterationsEditField.Value;
             rxObj.readItrs = str2num(app.ofBlocksDropDown.Value);
-            rxObj.awgnSNR = app.SimulatedAWGNSNREditField.Value;
+            rxObj.awgnSNR = app.SimulatedSNRdBEditField.Value;
             
             
-            % Load Preamble Length, Set M-seq order and taps
-            switch str2num(app.SyncPreambleLengthDropDown.Value)
-                case 256
-                    rxObj.preM = 8;
-                    rxObj.preTaps = [8, 6, 5, 4];
-                case 512
-                    rxObj.preM = 9;
-                    rxObj.preTaps = [9, 8, 6, 5];
-                case 1024
-                    rxObj.preM = 10;
-                    rxObj.preTaps = [10, 9, 7, 6];
-                case 2048
-                    rxObj.preM = 11;
-                    rxObj.preTaps = [11, 10, 9, 7];
-                otherwise
-                    rxObj.preM = 10;
-                    rxObj.preTaps = [10, 9, 7, 6];
-            end
-            
-            
-            [encBlock, dataBits] = buildencBlock(app);
-            rxObj.encBits = encBlock;
-            rxObj.dataBits = dataBits;
-            ratesVec = [1/2 2/3 3/4 5/6 1/3];
+                        % Load Rx Object
+
+            rxObj.FEC = app.ForwardErrorCorrectionButtonGroup.SelectedObject.Text;
+            rxObj.rate = str2num(app.RateDropDown.Value);
+            rxObj.preambLen = str2num(app.SyncPreambleLengthDropDown.Value);
+            rxObj.rng = str2num(app.RandomDataSeedDropDown.Value);
+            rxObj.blockLen = str2num(app.BlockLengthDropDown.Value);
+
             
             % Load Coding Scheme into Tx Object
             selectedButton = app.ForwardErrorCorrectionButtonGroup.SelectedObject;
@@ -422,6 +310,8 @@ classdef mqamApp < matlab.apps.AppBase
                 otherwise
             end
             
+            
+            
             try
                 readMQAM(rxObj,DSOVisaType,DSOVisaAddr);
                 app.Status.FontColor = [0.47 0.67 0.19];
@@ -436,8 +326,8 @@ classdef mqamApp < matlab.apps.AppBase
             app.ReceiveButton.Value = 0;
             
             % Disable/Enable visablity to bring app window back to the foreground
-            app.TIMSMQAMv085UIFigure.Visible = 0;
-            app.TIMSMQAMv085UIFigure.Visible = 1;
+            app.TIMSMQAMv095UIFigure.Visible = 0;
+            app.TIMSMQAMv095UIFigure.Visible = 1;
         end
 
         % Button pushed function: RefreshDeviceListButton
@@ -463,13 +353,13 @@ classdef mqamApp < matlab.apps.AppBase
                 %                     app.RunTxCalibrationButton.Enable = 1;
                 %                     app.AnalogRxFilterTuningButton.Enable = 1;
                 % Enable AWGN SNR
-                app.SimulatedAWGNSNREditField.Enable = 1;
+                app.SimulatedSNRdBEditField.Enable = 1;
                 % Update Status
                 app.Status.Text = 'Entered Simulator Mode';
             else
                 app.ApplyRxCalibrationSwitch.Value = 'On';
                 app.ApplyTxCalibrationSwitch.Value = 'On';
-                app.SimulatedAWGNSNREditField.Enable = 0;
+                app.SimulatedSNRdBEditField.Enable = 0;
                 refreshDevices(app);
             end
             
@@ -555,8 +445,8 @@ classdef mqamApp < matlab.apps.AppBase
             end
             app.RunTxCalibrationButton.Value = 0;
             % Disable/Enable visablity to bring app window back to the foreground
-            app.TIMSMQAMv085UIFigure.Visible = 0;
-            app.TIMSMQAMv085UIFigure.Visible = 1;
+            app.TIMSMQAMv095UIFigure.Visible = 0;
+            app.TIMSMQAMv095UIFigure.Visible = 1;
         end
 
         % Value changed function: RunRxCalibrationButton
@@ -586,8 +476,8 @@ classdef mqamApp < matlab.apps.AppBase
             
             app.RunRxCalibrationButton.Value = 0;
             % Disable/Enable visablity to bring app window back to the foreground
-            app.TIMSMQAMv085UIFigure.Visible = 0;
-            app.TIMSMQAMv085UIFigure.Visible = 1;
+            app.TIMSMQAMv095UIFigure.Visible = 0;
+            app.TIMSMQAMv095UIFigure.Visible = 1;
         end
 
         % Value changed function: AnalogRxFilterTuningButton
@@ -633,9 +523,7 @@ classdef mqamApp < matlab.apps.AppBase
                     title('Example of a Tuned Filter Response (Not Live Data)');
                     
                 end
-                
-                
-                
+                     
             catch ME
                 warning('Error Running setRigol');
                 warning(ME.message);
@@ -645,8 +533,8 @@ classdef mqamApp < matlab.apps.AppBase
             
             app.AnalogRxFilterTuningButton.Value = 0;
             % Disable/Enable visablity to bring app window back to the foreground
-            app.TIMSMQAMv085UIFigure.Visible = 0;
-            app.TIMSMQAMv085UIFigure.Visible = 1;
+            app.TIMSMQAMv095UIFigure.Visible = 0;
+            app.TIMSMQAMv095UIFigure.Visible = 1;
         end
     end
 
@@ -656,13 +544,13 @@ classdef mqamApp < matlab.apps.AppBase
         % Create UIFigure and components
         function createComponents(app)
 
-            % Create TIMSMQAMv085UIFigure and hide until all components are created
-            app.TIMSMQAMv085UIFigure = uifigure('Visible', 'off');
-            app.TIMSMQAMv085UIFigure.Position = [100 100 780 651];
-            app.TIMSMQAMv085UIFigure.Name = 'TIMS M-QAM - v0.85';
+            % Create TIMSMQAMv095UIFigure and hide until all components are created
+            app.TIMSMQAMv095UIFigure = uifigure('Visible', 'off');
+            app.TIMSMQAMv095UIFigure.Position = [100 100 780 651];
+            app.TIMSMQAMv095UIFigure.Name = 'TIMS M-QAM - v0.95';
 
             % Create TabGroup
-            app.TabGroup = uitabgroup(app.TIMSMQAMv085UIFigure);
+            app.TabGroup = uitabgroup(app.TIMSMQAMv095UIFigure);
             app.TabGroup.Position = [1 0 783 652];
 
             % Create TxRxTab
@@ -681,7 +569,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.ReceiveButton.ValueChangedFcn = createCallbackFcn(app, @ReceiveButtonValueChanged, true);
             app.ReceiveButton.Text = 'Receive';
             app.ReceiveButton.FontSize = 30;
-            app.ReceiveButton.Position = [330 57 124 43];
+            app.ReceiveButton.Position = [312 57 124 43];
 
             % Create QAMOrderDropDownLabel
             app.QAMOrderDropDownLabel = uilabel(app.TxRxTab);
@@ -691,7 +579,7 @@ classdef mqamApp < matlab.apps.AppBase
 
             % Create QAMOrderDropDown
             app.QAMOrderDropDown = uidropdown(app.TxRxTab);
-            app.QAMOrderDropDown.Items = {'4', '16', '32', '64', '128', '256', '512', '1024'};
+            app.QAMOrderDropDown.Items = {'2', '4', '16', '32', '64', '128', '256', '512', '1024'};
             app.QAMOrderDropDown.Editable = 'on';
             app.QAMOrderDropDown.ValueChangedFcn = createCallbackFcn(app, @QAMOrderDropDownValueChanged, true);
             app.QAMOrderDropDown.FontSize = 30;
@@ -730,7 +618,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.LDPCButton = uiradiobutton(app.ForwardErrorCorrectionButtonGroup);
             app.LDPCButton.Text = 'LDPC';
             app.LDPCButton.FontSize = 30;
-            app.LDPCButton.Position = [14 84 102 34];
+            app.LDPCButton.Position = [14 29 102 34];
 
             % Create RateDropDown
             app.RateDropDown = uidropdown(app.ForwardErrorCorrectionButtonGroup);
@@ -752,7 +640,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.TurboButton = uiradiobutton(app.ForwardErrorCorrectionButtonGroup);
             app.TurboButton.Text = 'Turbo';
             app.TurboButton.FontSize = 30;
-            app.TurboButton.Position = [14 23 99 34];
+            app.TurboButton.Position = [14 88 99 34];
 
             % Create DataRateLabel
             app.DataRateLabel = uilabel(app.TxRxTab);
@@ -784,7 +672,7 @@ classdef mqamApp < matlab.apps.AppBase
             % Create ofBlocksDropDownLabel
             app.ofBlocksDropDownLabel = uilabel(app.TxRxTab);
             app.ofBlocksDropDownLabel.FontSize = 25;
-            app.ofBlocksDropDownLabel.Position = [521 63 135 31];
+            app.ofBlocksDropDownLabel.Position = [475 65 135 31];
             app.ofBlocksDropDownLabel.Text = '# of Blocks:';
 
             % Create ofBlocksDropDown
@@ -793,7 +681,7 @@ classdef mqamApp < matlab.apps.AppBase
             app.ofBlocksDropDown.Editable = 'on';
             app.ofBlocksDropDown.FontSize = 30;
             app.ofBlocksDropDown.BackgroundColor = [1 1 1];
-            app.ofBlocksDropDown.Position = [664 58 64 36];
+            app.ofBlocksDropDown.Position = [618 60 110 36];
             app.ofBlocksDropDown.Value = '1';
 
             % Create SettingsTab
@@ -854,44 +742,30 @@ classdef mqamApp < matlab.apps.AppBase
             app.SyncPreambleLengthDropDown.Position = [480 433 136 36];
             app.SyncPreambleLengthDropDown.Value = '1024';
 
-            % Create RandomDataSeedDropDownLabel
-            app.RandomDataSeedDropDownLabel = uilabel(app.SettingsTab);
-            app.RandomDataSeedDropDownLabel.FontSize = 30;
-            app.RandomDataSeedDropDownLabel.Position = [154 353 272 36];
-            app.RandomDataSeedDropDownLabel.Text = 'Random Data Seed';
-
-            % Create RandomDataSeedDropDown
-            app.RandomDataSeedDropDown = uidropdown(app.SettingsTab);
-            app.RandomDataSeedDropDown.Items = {'A', 'B', 'C'};
-            app.RandomDataSeedDropDown.ItemsData = {'32164', '12345', '88888'};
-            app.RandomDataSeedDropDown.FontSize = 30;
-            app.RandomDataSeedDropDown.Position = [482 353 136 36];
-            app.RandomDataSeedDropDown.Value = '32164';
-
             % Create DecodeIterationsEditFieldLabel
             app.DecodeIterationsEditFieldLabel = uilabel(app.SettingsTab);
             app.DecodeIterationsEditFieldLabel.FontSize = 30;
-            app.DecodeIterationsEditFieldLabel.Position = [154 273 243 36];
+            app.DecodeIterationsEditFieldLabel.Position = [157 345 243 36];
             app.DecodeIterationsEditFieldLabel.Text = 'Decode Iterations';
 
             % Create DecodeIterationsEditField
             app.DecodeIterationsEditField = uieditfield(app.SettingsTab, 'numeric');
             app.DecodeIterationsEditField.FontSize = 30;
-            app.DecodeIterationsEditField.Position = [518 273 100 36];
+            app.DecodeIterationsEditField.Position = [521 345 100 36];
             app.DecodeIterationsEditField.Value = 8;
 
-            % Create SimulatedAWGNSNREditFieldLabel
-            app.SimulatedAWGNSNREditFieldLabel = uilabel(app.SettingsTab);
-            app.SimulatedAWGNSNREditFieldLabel.FontSize = 30;
-            app.SimulatedAWGNSNREditFieldLabel.Position = [154 202 315 36];
-            app.SimulatedAWGNSNREditFieldLabel.Text = 'Simulated AWGN SNR';
+            % Create SimulatedSNRdBEditFieldLabel
+            app.SimulatedSNRdBEditFieldLabel = uilabel(app.SettingsTab);
+            app.SimulatedSNRdBEditFieldLabel.FontSize = 30;
+            app.SimulatedSNRdBEditFieldLabel.Position = [158 257 315 38];
+            app.SimulatedSNRdBEditFieldLabel.Text = 'Simulated SNR (dB)';
 
-            % Create SimulatedAWGNSNREditField
-            app.SimulatedAWGNSNREditField = uieditfield(app.SettingsTab, 'numeric');
-            app.SimulatedAWGNSNREditField.FontSize = 30;
-            app.SimulatedAWGNSNREditField.Enable = 'off';
-            app.SimulatedAWGNSNREditField.Position = [517 198 100 36];
-            app.SimulatedAWGNSNREditField.Value = 30;
+            % Create SimulatedSNRdBEditField
+            app.SimulatedSNRdBEditField = uieditfield(app.SettingsTab, 'numeric');
+            app.SimulatedSNRdBEditField.FontSize = 30;
+            app.SimulatedSNRdBEditField.Enable = 'off';
+            app.SimulatedSNRdBEditField.Position = [521 255 100 36];
+            app.SimulatedSNRdBEditField.Value = 30;
 
             % Create TIMSCalibrationTab
             app.TIMSCalibrationTab = uitab(app.TabGroup);
@@ -966,8 +840,22 @@ classdef mqamApp < matlab.apps.AppBase
             app.EnableSimulatorModeCheckBox.FontSize = 30;
             app.EnableSimulatorModeCheckBox.Position = [223 38 339 34];
 
+            % Create RandomDataSeedDropDownLabel
+            app.RandomDataSeedDropDownLabel = uilabel(app.TIMSMQAMv095UIFigure);
+            app.RandomDataSeedDropDownLabel.FontSize = 30;
+            app.RandomDataSeedDropDownLabel.Position = [152 -87 272 36];
+            app.RandomDataSeedDropDownLabel.Text = 'Random Data Seed';
+
+            % Create RandomDataSeedDropDown
+            app.RandomDataSeedDropDown = uidropdown(app.TIMSMQAMv095UIFigure);
+            app.RandomDataSeedDropDown.Items = {'A', 'B', 'C'};
+            app.RandomDataSeedDropDown.ItemsData = {'32164', '12345', '88888'};
+            app.RandomDataSeedDropDown.FontSize = 30;
+            app.RandomDataSeedDropDown.Position = [480 -87 136 36];
+            app.RandomDataSeedDropDown.Value = '32164';
+
             % Show the figure after all components are created
-            app.TIMSMQAMv085UIFigure.Visible = 'on';
+            app.TIMSMQAMv095UIFigure.Visible = 'on';
         end
     end
 
@@ -981,7 +869,7 @@ classdef mqamApp < matlab.apps.AppBase
             createComponents(app)
 
             % Register the app with App Designer
-            registerApp(app, app.TIMSMQAMv085UIFigure)
+            registerApp(app, app.TIMSMQAMv095UIFigure)
 
             % Execute the startup function
             runStartupFcn(app, @startupFcn)
@@ -995,7 +883,7 @@ classdef mqamApp < matlab.apps.AppBase
         function delete(app)
 
             % Delete UIFigure when app is deleted
-            delete(app.TIMSMQAMv085UIFigure)
+            delete(app.TIMSMQAMv095UIFigure)
         end
     end
 end
