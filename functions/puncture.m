@@ -24,7 +24,7 @@ else
         temp = zeros(nPunc,1);
         temp(~pNDX) = llrVec(~pNDX);
         temp(pNDX) = sigIn(nBits*(n-1)+1:nBits*n);
-        sigOut(nPunc*(n-1)+1:nPunc*n) = temp;   
+        sigOut(nPunc*(n-1)+1:nPunc*n,1) = temp;   
     end
 
 end

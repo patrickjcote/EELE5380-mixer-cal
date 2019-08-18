@@ -4,7 +4,7 @@ function [encBlock] = turbEncode(dataBits,rateNdx)
 %	This function convolutionally encodes a the supplied dataBlock.
 %   The decode function assumes the original data bits are terminated
 %   with enough 0's to fully flush the encoder.
-%
+%   
 %   Constraint length 7 encoder with Octal Trellis 171 and 133
 %
 %   Total block length after encoding must result in an integer multiple of
@@ -32,25 +32,24 @@ if exist('rateNdx','var')
     switch rateNdx
         case 1
             disp('1/2 rate puncture');
-            punctPattern = [1 1 0 1 0 1];
+            punctPattern = [1 1 0  1 0 1];
         case 2
             disp('2/3 rate puncture');
             % 1/3 -> 2/3 rate
-            punctPattern = [1 1 0 1 0 0 1 0 1 1 0 0];
+            punctPattern = [1 1 0  1 0 0  1 0 1  1 0 0];
         case 3
             disp('3/4 rate puncture')
-            punctPattern = [1 1 0  1 0 0  1 0 0    1 0 1  1 0 0  1 0 0];
-
+            punctPattern = [1 1 0  1 0 0  1 0 0   1 0 1  1 0 0  1 0 0   1 0 0  1 1 0  1 0 0 ];
         case 4
             disp('5/6 rate puncture');
-            punctPattern = [1 1 1 0 0 1 1 0 0 1];
+            punctPattern = [1 1 0  1 0 0  1 0 0  1 0 0  1 0 0];
         otherwise
             disp('Rate 1/3. No puncture.');
             encBlock = encBits;
             return
     end
     
-    encBlock = puncture(encBits,punctPattern);
+    encBlock = [puncture(encBits(1:end-12),punctPattern);encBits(end-11:end)];
 
 end
 
