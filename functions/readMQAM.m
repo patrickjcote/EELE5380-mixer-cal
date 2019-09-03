@@ -289,7 +289,7 @@ BER = totalErrorStats(1);
 bit_errors = totalErrorStats(2);
 totalBits = totalErrorStats(3);
 BLER = blockErrs/readItrs*100;
-RSER = totalSymErrs/(readItrs*blockLen)*100;
+RSER = totalSymErrs/(readItrs*blockLen/log2(M))*100;
 
 
 %% Plot Received Symbols and Symbols in Error
